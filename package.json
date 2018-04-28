@@ -1,0 +1,33 @@
+{
+  "name": "brsxmlc",
+  "version": "0.0.1",
+  "description": "preprocessor for roku brightscript and scenegraph xml files",
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "chai": "^4.1.2",
+    "mocha": "^5.1.1",
+    "ncp": "^2.0.0",
+    "replace-ext": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.6.1",
+    "mocha": "^5.1.1"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "brightscript",
+    "scenegraph",
+    "roku",
+    "preprocessor"
+  ],
+  "author": "George Cook",
+  "license": "ISC"
+}
