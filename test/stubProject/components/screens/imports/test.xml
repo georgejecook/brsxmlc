@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component
+        name="DynamicScreen"
+        extends="BaseController"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd"
+>
+    <interface>
+        <!-- public fields/functions -->
+        <field
+                id="target"
+                type="string"
+                alias="text.text" />
+    </interface>
+
+    <script
+            type="text/brightscript"
+            uri="pkg:/components/screens/imports/test.brs" />
+
+
+    <children>
+        <Label
+                id="text"
+                text="Dyanmic screen"
+                translation="[0.0,800.0]" />
+
+    </children>
+
+</component>

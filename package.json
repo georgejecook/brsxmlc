@@ -12,8 +12,10 @@
     "chai": "^4.1.2",
     "mocha": "^5.1.1",
     "ncp": "^2.0.0",
-    "replace-ext": "^1.0.0"
-  },
+    "replace-ext": "^1.0.0",
+		"lodash": "latest",
+		"splice-string": "latest"
+	},
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.6.1",
