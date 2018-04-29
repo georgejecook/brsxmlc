@@ -15,17 +15,29 @@ const importFilesPath = path.join(sourcePath, 'components', 'screens', 'imports'
 
 describe("Project Processor", () => {
 	beforeEach(()=>{
-		this.processor = new ProjectProcessor(sourcePath, targetPath, this.fileMap);
+		this.config = _.clone(config);
+		this.processor = new ProjectProcessor(sourcePath, targetPath, this.fileMap, this.config);
 		fs.removeSync(targetPath);
 	});
 
 	describe("Initialization", () => {
-		it("correctly sets source directory", () => {
+		it("correctly sets source paths and config", () => {
 			expect(this.processor.sourceFolder).to.equal(sourcePath);
 			expect(this.processor.targetFolder).to.equal(targetPath);
+			expect(this.processor.config).to.equal(this.config);
 			expect(this.processor.fileMap).to.not.be.null;
+
 			//TODO look into correct babel compatible way to do this
 			//expect(this.processor.fileMap instanceof ProjectFileMap).is.true; // this fails, and so does every other instance checking
+		});
+
+		it("allows overriding of filemap", () => {
+			const filemap = new ProjectFileMap(targetPath);
+			this.processor = new ProjectProcessor(sourcePath, targetPath, filemap, this.config);
+
+			expect(this.processor.sourceFolder).to.equal(sourcePath);
+			expect(this.processor.targetFolder).to.equal(targetPath);
+			expect(this.processor.fileMap).to.equal(filemap);
 		});
 	});
 
@@ -71,7 +83,11 @@ describe("Project Processor", () => {
 			//TODO let config do this
 			this.processor.copyFiles();
 			this.processor.createFileDescriptors(targetPath);
+			const allFiles = this.processor.fileMap.allFiles;
 			console.debug('finished processing map - it contains');
+			expect(_.some(allFiles, { 'filename': 'test2importsExcluded.xml'})).to.be.true;
+			expect(_.some(allFiles, { 'filename': 'test2importsExcluded.xml'})).to.be.true;
+
 			_.forOwn(this.processor.fileMap.allFiles ,(v, k) => console.debug(v.toString()));
 
 		});
