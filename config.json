@@ -4,6 +4,7 @@
 	"importTemplate":"<script type=\"text/brightscript\" uri=\"$PATH$\" />",
 	"observeRegex":"\"{\"",
 	"bindingRegex":"\"{\"",
-	"bindingObserverRegex":"\"{\""
+	"bindingObserverRegex":"\"{\"",
+	"excludedFolders":["components/screens/excluded"]
 
 }

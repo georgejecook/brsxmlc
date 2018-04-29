@@ -3,18 +3,43 @@ const FileDescriptor = require('../lib/fileDescriptor');
 const FileType = require('../lib/fileType');
 const DirectiveType = require('../lib/directiveType');
 const IncludeImporter = require('../lib/includeImporter');
+const ProjectProcessor = require('../lib/projectProcessor');
+const ProjectFileMap = require('../lib/projectFileMap');
 const config = require('../config.json');
 const path = require('path');
 
-var sourcePath = path.join(__dirname, 'stubProject');
-var importFilesPath = path.join(sourcePath, 'components', 'screens', 'imports');
+const sourcePath = path.join(__dirname, 'stubProject');
+const targetPath = path.join(__dirname, '..', 'tmp');
+const importFilesPath = path.join(targetPath, 'components', 'screens', 'imports');
 
 describe("Include importer", () => {
+	beforeEach(()=>{
+		this.fileMap = new ProjectFileMap(sourcePath);
+		this.processor = new ProjectProcessor(sourcePath, targetPath, this.fileMap);
+		this.processor.clearFiles();
+		this.processor.copyFiles();
+	});
+
 	describe("Initialization", () => {
-		it("initializes", function () {
-			var file = new FileDescriptor(importFilesPath, "test.xml", ".xml");
-			var importer = new IncludeImporter(config, file);
+		it("initializes with codebehind file", function () {
+			var file = createCodeBehind(importFilesPath, 'test');
+			var importer = new IncludeImporter(config, file, this.fileMap);
 			expect(importer).to.not.be.null;
+		});
+
+		it("fails with xml file", function () {
+			var file = createFile(importFilesPath, 'xml');
+			expect(() => new IncludeImporter(config, file, this.fileMap)).to.throw(Error);
+		});
+
+		it("fails with brs file", function () {
+			var file = createFile(importFilesPath, 'brs');
+			expect(() => new IncludeImporter(config, file, this.fileMap)).to.throw(Error);
+		});
+
+		it("fails with other file", function () {
+			var file = createFile(importFilesPath, 'png');
+			expect(() => new IncludeImporter(config, file, this.fileMap)).to.throw(Error);
 		});
 
 	});
@@ -23,7 +48,7 @@ describe("Include importer", () => {
 
 		it("identifies 1 import", () => {
 			var codeBehind = createCodeBehind(importFilesPath, 'test');
-			var importer = new IncludeImporter(config, codeBehind);
+			var importer = new IncludeImporter(config, codeBehind, this.fileMap);
 			expect(importer).to.not.be.null;
 			importer.identifyImports();
 			expect(importer.requiredImports).to.have.lengthOf(1);
@@ -48,4 +73,8 @@ function createCodeBehind(path, name){
 	codeBehind.associatedFile = view;
 	view.associatedFile = codeBehind;
 	return codeBehind;
+}
+
+function createFile(path, extension){
+	return new FileDescriptor(path, `test${extension}`, ".extension");
 }
