@@ -10,14 +10,15 @@
   "dependencies": {
     "babel-cli": "^6.26.0",
     "chai": "^4.1.2",
+    "chai-subset": "^1.6.0",
+    "debug": "latest",
     "dir-compare": "^1.4.0",
     "fs-extra": "^5.0.0",
     "lodash": "latest",
     "mocha": "^5.1.1",
     "replace-ext": "^1.0.0",
-    "splice-string": "^2.0.0",
-		"debug": "latest"
-	},
+    "splice-string": "^2.0.0"
+  },
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-preset-env": "^1.6.1",
