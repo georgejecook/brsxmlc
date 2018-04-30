@@ -11,7 +11,6 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const sourcePath = path.join(__dirname, 'stubProject');
 const targetPath = path.join(__dirname, '..', 'tmp');
-const importFilesPath = path.join(sourcePath, 'components', 'screens', 'imports');
 const chaiSubset = require('chai-subset');
 const chai = require('chai');
 chai.use(chaiSubset);

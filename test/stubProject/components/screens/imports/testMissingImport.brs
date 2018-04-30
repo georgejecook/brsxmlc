@@ -1,4 +1,4 @@
-'@Imports BadImport
+'@Import UnknownImport
 
 function Init() as void
     m.log.I("Init")

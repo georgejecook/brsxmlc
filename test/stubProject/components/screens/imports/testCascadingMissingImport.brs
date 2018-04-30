@@ -1,4 +1,4 @@
-'@Import NetMixin
+'@Import BadImport
 
 function Init() as void
     m.log.I("Init")
