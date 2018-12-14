@@ -1,8 +1,8 @@
-const expect = require('chai').expect;
-const FileDescriptor = require('../lib/fileDescriptor');
-const FileType = require('../lib/fileType');
-const DirectiveType = require('../lib/directiveType');
+import { expect } from 'chai';
 
+import FileDescriptor from './FileDescriptor';
+
+import { FileType } from './FileType';
 
 describe("File Descriptor", function () {
 	describe("Initialization", function () {

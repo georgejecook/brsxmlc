@@ -15,7 +15,7 @@
 
     <script
             type="text/brightscript"
-            uri="pkg:/components/screens/imports/testcascadingimports.brs" />
+            uri="pkg:/components/screens/imports/testCascadingImports.brs" />
 
 
     <children>
