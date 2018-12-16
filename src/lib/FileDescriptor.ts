@@ -1,11 +1,7 @@
-"use strict";
-import * as fs from "fs";
-
-import { FileType } from "./FileType";
-
-import { DirectiveType } from "./DirectiveType";
-
+import * as fs from 'fs';
 import * as path from 'path';
+
+import { FileType } from './FileType';
 
 export default class FileDescriptor {
 
@@ -27,19 +23,19 @@ export default class FileDescriptor {
 
   private _fileContents: string;
 
-  get fileType() : FileType {
+  get fileType(): FileType {
     switch (this.extension.toLowerCase()) {
       case '.brs':
-        return this.associatedFile ? FileType.CODEBEHIND : FileType.BRS;
+        return this.associatedFile ? FileType.CodeBehind : FileType.Brs;
       case '.xml':
-        return this.associatedFile ? FileType.VIEWXML : FileType.XML;
+        return this.associatedFile ? FileType.ViewXml : FileType.Xml;
       default:
-        return FileType.OTHER;
+        return FileType.Other;
     }
   }
 
   public get isMixin() {
-    return this.filename.endsWith("Mixin");
+    return this.filename.endsWith('Mixin');
   }
 
   public get fullPath() {
@@ -52,7 +48,7 @@ export default class FileDescriptor {
   }
 
   public getFileContents() {
-    if (this._fileContents == null) {
+    if (!this._fileContents) {
       this._fileContents = fs.readFileSync(this.fullPath, 'utf8');
     }
     return this._fileContents;
@@ -66,14 +62,8 @@ export default class FileDescriptor {
     this._fileContents = null;
   }
 
-
-  toString() {
+  public toString() {
     return `DESCRIPTOR: ${this.filename} TYPE ${this.fileType} PATH ${this.fullPath}`;
   }
 
-  print() {
-    console.log(this.toString());
-  }
 }
-
-module.exports = FileDescriptor;

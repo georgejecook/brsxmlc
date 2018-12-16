@@ -7,5 +7,5 @@ export function spliceString(str: string, index: number, count: number, add: str
     }
   }
 
-  return str.slice(0, index) + (add || "") + str.slice(index + count);
+  return str.slice(0, index) + (add || '') + str.slice(index + count);
 }

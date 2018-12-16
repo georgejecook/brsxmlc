@@ -2,7 +2,8 @@
 	"compilerOptions": {
 		"outDir": "./out",
 		"allowJs": true,
-		"target": "esnext"
+		"target": "ES2015",
+		"lib": ["esnext"]
 	},
 	"include": [
 		"./src/**/*"
