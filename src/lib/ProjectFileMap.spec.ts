@@ -2,6 +2,7 @@ import { expect } from 'chai';
 
 import FileDescriptor from './FileDescriptor';
 import ProjectFileMap from './ProjectFileMap';
+
 let config = require('../test/testProcessorConfig.json');
 
 describe('Project File map', function() {

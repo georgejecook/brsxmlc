@@ -10,19 +10,19 @@
         <field
                 id="target"
                 type="string"
-                alias="text.text" />
+                alias="text.text"/>
     </interface>
 
     <script
             type="text/brightscript"
-            uri="pkg:/components/screens/imports/testMissingImport.brs" />
+            uri="pkg:/components/screens/imports/testMissingImport.brs"/>
 
 
     <children>
         <Label
                 id="text"
                 text="Dyanmic screen"
-                translation="[0.0,800.0]" />
+                translation="[0.0,800.0]"/>
 
     </children>
 

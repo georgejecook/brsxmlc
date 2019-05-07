@@ -6,27 +6,26 @@ import { expect } from 'chai';
 
 import FileDescriptor from './FileDescriptor';
 import { FileType } from './FileType';
+import { ProcessorConfig } from './ProcessorConfig';
 import ProjectFileMap from './ProjectFileMap';
-import ProjectProcessor from './ProjectProcessor';
+import { ProjectProcessor } from './ProjectProcessor';
 
 const chaiSubset = require('chai-subset');
 let dircompare = require('dir-compare');
 
 chai.use(chaiSubset);
-let config = require('../test/testProcessorConfig.json');
+let config: ProcessorConfig = require('../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 
 describe('Project Processor', function() {
   beforeEach(() => {
     config = _.clone(config);
     processor = new ProjectProcessor(config);
-    fs.removeSync(config.targetPath);
+    fs.removeSync(config.outputPath);
   });
 
   describe('Initialization', function() {
     it('correctly sets source paths and config', function() {
-      expect(processor.sourcePath).to.equal(config.sourcePath);
-      expect(processor.targetPath).to.equal(config.targetPath);
       expect(processor.config).to.equal(config);
       expect(processor.fileMap).to.not.be.null;
 
@@ -35,11 +34,10 @@ describe('Project Processor', function() {
     });
 
     it('allows overriding of filemap', function() {
-      const filemap = new ProjectFileMap(config.targetPath);
+      const filemap = new ProjectFileMap(config);
       processor = new ProjectProcessor(config, filemap);
 
-      expect(processor.sourcePath).to.equal(config.sourcePath);
-      expect(processor.targetPath).to.equal(config.targetPath);
+      expect(processor.config).to.equal(config);
       expect(processor.fileMap).to.equal(filemap);
     });
   });
@@ -49,7 +47,7 @@ describe('Project Processor', function() {
       console.debug('copying files');
       processor.copyFiles();
       const options = { compareSize: true };
-      const res = dircompare.compareSync(config.sourcePath, config.targetPath, options);
+      const res = dircompare.compareSync(config.sourcePath, config.outputPath, options);
       expect(res.same).to.be.true;
       //console.debug(`finished ${res}`);
     });
@@ -60,18 +58,17 @@ describe('Project Processor', function() {
       console.debug('copying files');
       processor.copyFiles();
       const options = { compareSize: true };
-      const res = dircompare.compareSync(config.sourcePath, config.targetPath, options);
+      const res = dircompare.compareSync(config.sourcePath, config.outputPath, options);
       expect(res.same).to.be.true;
       processor.clearFiles();
-      expect(fs.pathExistsSync(config.targetPath)).to.be.false;
+      expect(fs.pathExistsSync(config.outputPath)).to.be.false;
     });
   });
 
   describe('Process files', function() {
     beforeEach(() => {
       processor.copyFiles();
-      processor.createFileDescriptors(config.targetPath);
-      processor.fileMap.allFiles;
+      processor.createFileDescriptors();
     });
 
     it('populates descriptors', () => {

@@ -6,7 +6,7 @@ import * as path from 'path';
 import FileDescriptor from './FileDescriptor';
 import IncludeImporter from './IncludeImporter';
 import ProjectFileMap from './ProjectFileMap';
-import ProjectProcessor from './ProjectProcessor';
+import { ProjectProcessor } from './ProjectProcessor';
 
 const chaiSubset = require('chai-subset');
 chai.use(chaiSubset);
@@ -27,25 +27,24 @@ describe('Include importer', function() {
   });
 
   describe('Initialization', function() {
-    it('initializes with codebehind file', function() {
-      const file = createCodeBehind(importFilesPath, 'test');
-      const importer = new IncludeImporter(config, file, processor);
+    it('initializes with valid processor', function() {
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
     });
 
     it('fails with xml file', function() {
       const file = createFile(importFilesPath, 'xml');
-      expect(() => new IncludeImporter(config, file, fileMap)).to.throw(Error);
+      expect(() => new IncludeImporter(processor).identifyImports(file)).to.throw(Error);
     });
 
     it('fails with brs file', function() {
       const file = createFile(importFilesPath, 'brs');
-      expect(() => new IncludeImporter(config, file, fileMap)).to.throw(Error);
+      expect(() => new IncludeImporter(processor).identifyImports(file)).to.throw(Error);
     });
 
     it('fails with other file', function() {
       const file = createFile(importFilesPath, 'png');
-      expect(() => new IncludeImporter(config, file, fileMap)).to.throw(Error);
+      expect(() => new IncludeImporter(processor).identifyImports(file)).to.throw(Error);
     });
 
   });
@@ -54,48 +53,48 @@ describe('Include importer', function() {
 
     it('identifies 1 import', function() {
       const codeBehind = createCodeBehind(importFilesPath, 'test');
-      const importer = new IncludeImporter(config, codeBehind, processor);
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
-      importer.identifyImports();
-      expect(importer.requiredImports).to.have.lengthOf(1);
-      expect(importer.requiredImports).containSubset([{ filename: 'FocusMixin.brs' }]);
+      importer.identifyImports(codeBehind);
+      expect(codeBehind.requiredImports).to.have.lengthOf(1);
+      expect(codeBehind.requiredImports).containSubset([{ filename: 'FocusMixin.brs' }]);
     });
 
     it('identifies 2 imports', function() {
       const codeBehind = createCodeBehind(importFilesPath, 'test2Imports');
-      const importer = new IncludeImporter(config, codeBehind, processor);
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
-      importer.identifyImports();
+      importer.identifyImports(codeBehind);
 
-      expect(importer.requiredImports).to.have.lengthOf(2);
-      expect(importer.requiredImports).containSubset([{ filename: 'FocusMixin.brs' }]);
+      expect(codeBehind.requiredImports).to.have.lengthOf(2);
+      expect(codeBehind.requiredImports).containSubset([{ filename: 'FocusMixin.brs' }]);
     });
 
     it('fails on missing import', function() {
       const codeBehind = createCodeBehind(importFilesPath, 'testMissingImport');
-      const importer = new IncludeImporter(config, codeBehind, processor);
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       //expect error
-      expect(() => importer.identifyImports()).to.throw(Error);
+      expect(() => importer.identifyImports(codeBehind)).to.throw(Error);
 
     });
 
     it('identifies cascading imports', function() {
       const codeBehind = new FileDescriptor(importFilesPath, `testCascadingImports.brs`, '.brs');
-      const importer = new IncludeImporter(config, codeBehind, processor);
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
-      importer.identifyImports();
+      importer.identifyImports(codeBehind);
 
-      expect(importer.requiredImports).to.have.lengthOf(3);
-      expect(importer.requiredImports).containSubset([{ filename: 'NetMixin.brs' }, { filename: 'LogMixin.brs' }, { filename: 'Utils.brs' }]);
+      expect(codeBehind.requiredImports).to.have.lengthOf(3);
+      expect(codeBehind.requiredImports).containSubset([{ filename: 'NetMixin.brs' }, { filename: 'LogMixin.brs' }, { filename: 'Utils.brs' }]);
     });
 
     it('fails on cascading missing imports', function() {
       const codeBehind = new FileDescriptor(importFilesPath, `testCascadingMissingImport.brs`, '.brs');
-      const importer = new IncludeImporter(config, codeBehind, processor);
+      const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       //expect error
-      expect(() => importer.identifyImports()).to.throw(Error);
+      expect(() => importer.identifyImports(codeBehind)).to.throw(Error);
     });
   });
 

@@ -3,14 +3,18 @@ import * as path from 'path';
 
 import { FileType } from './FileType';
 
+/**
+ * describes a file in our project.
+ */
 export default class FileDescriptor {
 
   constructor(directory, filename, extension) {
     this.filename = filename;
     this.directory = directory;
     this.extension = extension;
-    this.currentImportIds = []; //array of ids
-    this.requireImportIds = []; //array of ids
+    this.currentImportIds = [];
+    this.requireImportIds = [];
+    this._requiredImports = [];
     this.associatedFile = null;
   }
 
@@ -19,6 +23,7 @@ export default class FileDescriptor {
   public extension: string;
   public currentImportIds: string[];
   public requireImportIds: string[];
+  public _requiredImports: FileDescriptor[];
   public associatedFile?: FileDescriptor;
 
   private _fileContents: string;
@@ -38,20 +43,37 @@ export default class FileDescriptor {
     return this.filename.endsWith('Mixin');
   }
 
+  public get requiredImports(): FileDescriptor[] {
+    return this._requiredImports;
+  }
+
   public get fullPath() {
     return path.join(this.directory, this.filename);
   }
 
-  public getPackagePath(projectRoot) {
-    //TODO - remove projectRoot from directory, and replace with :pkg
-    return path.join(this.directory, this.filename);
+  public getPackagePath(projectRoot: string, cwd: string) {
+    let pkgPath = `pkg:${this.fullPath.replace(projectRoot, '')}`;
+    pkgPath = pkgPath.replace(cwd, '');
+    return pkgPath.replace('pkg://', 'pkg:/');
   }
 
-  public getFileContents() {
+  public get normalizedFileName() {
+    return this.filename.replace('.brs', '').replace('-', '_').replace('.', '_');
+  }
+
+  public get normalizedFullFileName() {
+    return this.fullPath.replace('/', '_') + this.normalizedFileName;
+  }
+
+  public getFileContents(): string {
     if (!this._fileContents) {
       this._fileContents = fs.readFileSync(this.fullPath, 'utf8');
     }
     return this._fileContents;
+  }
+
+  public setFileContents(fileContents: string) {
+    this._fileContents = fileContents;
   }
 
   public saveFileContents() {
@@ -62,7 +84,7 @@ export default class FileDescriptor {
     this._fileContents = null;
   }
 
-  public toString() {
+  public toString(): string {
     return `DESCRIPTOR: ${this.filename} TYPE ${this.fileType} PATH ${this.fullPath}`;
   }
 

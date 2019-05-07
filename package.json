@@ -2,30 +2,22 @@
 	"name": "RCP",
 	"version": "0.0.1",
 	"description": "preprocessor for roku brightscript and scenegraph xml files",
-	"main": "src/index.ts",
-	"directories": {
-		"example": "examples",
-		"test": "test"
-	},
+	"main": "dist/index.js",
+	"typings": "dist/index.d.ts",
+	"files": [
+		"dist/**/!(*.spec.*)*",
+		"brsconfig.schema.json"
+	],
 	"dependencies": {
-		"babel-cli": "^6.26.0",
-		"chai": "^4.1.2",
-		"chai-subset": "^1.6.0",
-		"codecov": "^3.1.0",
 		"commander": "latest",
 		"debug": "latest",
 		"dir-compare": "^1.4.0",
 		"fs-extra": "^5.0.0",
-		"glob": "^7.1.3",
+		"glob-all": "^3.1.0",
 		"lodash": "latest",
-		"mocha": "^5.1.1",
-		"nyc": "^13.1.0",
+		"os": "^0.1.1",
 		"replace-ext": "^1.0.0",
-		"splice-string": "^2.0.0",
-		"tslint": "^5.11.0",
-		"tslint-eslint-rules": "^5.4.0",
-		"tslint-origin-ordered-imports-rule": "^1.1.2",
-		"typescript": "^3.2.2"
+		"splice-string": "^2.0.0"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.1.7",
@@ -37,23 +29,33 @@
 		"@types/mocha": "^5.2.5",
 		"@types/node": "^10.12.15",
 		"@types/replace-ext": "0.0.27",
+		"babel-cli": "^6.26.0",
 		"babel-core": "^6.26.3",
 		"babel-preset-env": "^1.6.1",
+		"chai": "^4.1.2",
+		"chai-subset": "^1.6.0",
+		"codecov": "^3.1.0",
 		"compare-directories": "^0.1.0",
 		"mocha": "^5.1.1",
-		"ts-node": "^7.0.1"
+		"nyc": "^13.1.0",
+		"ts-node": "^7.0.1",
+		"tslint": "^5.11.0",
+		"tslint-eslint-rules": "^5.4.0",
+		"tslint-origin-ordered-imports-rule": "^1.1.2",
+		"typescript": "^3.2.2"
 	},
 	"scripts": {
 		"test": "nyc mocha src/**/*.spec.ts --full-trace --bail",
-		"prepare": "npm run compile",
 		"compile": "tsc -p .",
+		"prepublishOnly": "npm run compile",
 		"tslint": "tslint ./src/**/*.ts",
 		"build-and-test": "npm run compile && npm run test",
-		"coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
+		"coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+		"publish-npm:beta": "npm publish --tag=next"
 	},
 	"preferGlobal": true,
 	"bin": {
-		"rcp": "./index.js"
+		"rcp": "dist/cli.js"
 	},
 	"keywords": [
 		"brightscript",
