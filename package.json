@@ -9,6 +9,7 @@
 		"brsconfig.schema.json"
 	],
 	"dependencies": {
+		"brightscript-language": "file:../opensource/brightscript-language",
 		"commander": "latest",
 		"debug": "latest",
 		"dir-compare": "^1.4.0",

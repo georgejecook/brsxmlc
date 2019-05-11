@@ -2,7 +2,9 @@
 	"filePattern": [
 		"**/*.brs",
 		"**/*.xml",
-		"!**/excluded/**/*"
+		"!**/excluded/**/*",
+		"!**/testMissingImport.*",
+		"!**/testCascadingMissingExport.*"
 	],
 	"sourcePath": "src/test/stubProject",
 	"outputPath": "build"

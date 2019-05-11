@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { BrsFile } from 'brightscript-language';
+import { XmlFile } from 'brightscript-language';
 import { FileType } from './FileType';
 
 /**
@@ -8,23 +10,34 @@ import { FileType } from './FileType';
  */
 export default class FileDescriptor {
 
-  constructor(directory, filename, extension) {
+  constructor(fsPath: string, projectPath: string, filename: string, extension: string) {
     this.filename = filename;
-    this.directory = directory;
+    this._fsPath = fsPath;
+    this._fullPath = path.join(fsPath, filename);
+    this._pkgPath = path.join(projectPath, filename);
+    this._pkgUri = `pkg://${path.join(projectPath, filename)}`;
+    this.projectPath = projectPath;
     this.extension = extension;
     this.currentImportIds = [];
     this.requireImportIds = [];
     this._requiredImports = [];
     this.associatedFile = null;
+    this.parentFile = null;
   }
 
   public filename: string;
-  public directory: string;
+  private _fsPath: string;
+  private _pkgPath: string;
+  private _pkgUri: string;
+  private _fullPath: string;
+  public projectPath: string;
   public extension: string;
   public currentImportIds: string[];
-  public requireImportIds: string[];
-  public _requiredImports: FileDescriptor[];
+  private requireImportIds: string[];
+  private _requiredImports: FileDescriptor[];
   public associatedFile?: FileDescriptor;
+  public parentFile?: FileDescriptor;
+  public programFile: XmlFile | BrsFile;
 
   private _fileContents: string;
 
@@ -43,18 +56,24 @@ export default class FileDescriptor {
     return this.filename.endsWith('Mixin');
   }
 
+  public get fsPath() {
+    return this._fsPath;
+  }
+
   public get requiredImports(): FileDescriptor[] {
     return this._requiredImports;
   }
 
   public get fullPath() {
-    return path.join(this.directory, this.filename);
+    return this._fullPath;
   }
 
-  public getPackagePath(projectRoot: string, cwd: string) {
-    let pkgPath = `pkg:${this.fullPath.replace(projectRoot, '')}`;
-    pkgPath = pkgPath.replace(cwd, '');
-    return pkgPath.replace('pkg://', 'pkg:/');
+  public get pkgPath() {
+    return this._pkgPath;
+  }
+
+  public get pkgUri() {
+    return this._pkgUri;
   }
 
   public get normalizedFileName() {

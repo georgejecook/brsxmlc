@@ -146,10 +146,17 @@ export default class IncludeImporter {
     //we place imports at the end of the file to ensure we don't screw up error line number reporting
 
     let xmlContents = fileDescriptor.associatedFile.getFileContents();
-    const insertionIndex = 43; //TODO - get the end tag location, and put it on the line before
-    xmlContents = spliceString(xmlContents, insertionIndex, 0, imports);
-    fileDescriptor.associatedFile.setFileContents(xmlContents);
-    fileDescriptor.associatedFile.saveFileContents();
+    this.settings.endOfXmlFileRegex.lastIndex = 0;
+    let result = this.settings.endOfXmlFileRegex.exec(xmlContents);
+    if (result) {
+      const insertionIndex = result.index; //TODO - get the end tag location, and put it on the line before
+      xmlContents = spliceString(xmlContents, insertionIndex, 0, imports);
+      fileDescriptor.associatedFile.setFileContents(xmlContents);
+      fileDescriptor.associatedFile.saveFileContents();
+    } else {
+      this.feedback.push(new FileFeedback(fileDescriptor.associatedFile, FileFeedbackType.Error, `xml file did not have end component tag`));
+      throw new Error(`xml file did not have end component tag`);
+    }
   }
 
   private static getRegexMatchesValues(input, regex, groupIndex) {

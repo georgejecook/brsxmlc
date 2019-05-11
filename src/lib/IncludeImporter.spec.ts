@@ -14,7 +14,8 @@ chai.use(chaiSubset);
 let config = require('../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 let fileMap: ProjectFileMap;
-let importFilesPath: string = path.join(config.sourcePath, 'components', 'screens', 'imports');
+let importFilesPath: string = path.join('components', 'screens', 'imports');
+let projectPath: string = path.join(path.resolve(config.outputPath), importFilesPath);
 
 describe('Include importer', function() {
   beforeEach(function() {
@@ -80,7 +81,7 @@ describe('Include importer', function() {
     });
 
     it('identifies cascading imports', function() {
-      const codeBehind = new FileDescriptor(importFilesPath, `testCascadingImports.brs`, '.brs');
+      const codeBehind = new FileDescriptor(projectPath, importFilesPath, `testCascadingImports.brs`, '.brs');
       const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       importer.identifyImports(codeBehind);
@@ -90,7 +91,7 @@ describe('Include importer', function() {
     });
 
     it('fails on cascading missing imports', function() {
-      const codeBehind = new FileDescriptor(importFilesPath, `testCascadingMissingImport.brs`, '.brs');
+      const codeBehind = new FileDescriptor(config.projectPath, importFilesPath,  `testCascadingMissingImport.brs`, '.brs');
       const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       //expect error
@@ -101,13 +102,13 @@ describe('Include importer', function() {
 });
 
 function createCodeBehind(path, name) {
-  const codeBehind = new FileDescriptor(path, `${name}.brs`, '.brs');
-  const view = new FileDescriptor(path, `${name}.xml`, '.xml');
+  const codeBehind = new FileDescriptor(projectPath, path, `${name}.brs`, '.brs');
+  const view = new FileDescriptor(projectPath, path, `${name}.xml`, '.xml');
   codeBehind.associatedFile = view;
   view.associatedFile = codeBehind;
   return codeBehind;
 }
 
 function createFile(path, extension) {
-  return new FileDescriptor(path, `test${extension}`, '.extension');
+  return new FileDescriptor(config.projectPath, path, `test${extension}`, '.extension');
 }

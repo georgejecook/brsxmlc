@@ -65,8 +65,9 @@ describe('Project Processor', function() {
     });
   });
 
-  describe('Process files', function() {
+  describe('createFileDescriptors', function() {
     beforeEach(() => {
+      processor.clearFiles();
       processor.copyFiles();
       processor.createFileDescriptors();
     });
@@ -137,6 +138,38 @@ describe('Project Processor', function() {
         'testCascadingImports.brs': (v: FileDescriptor) => v.filename === 'testCascadingImports.brs' && v.fileType === FileType.CodeBehind,
         'testMissingImport.brs': (v: FileDescriptor) => v.filename === 'testMissingImport.brs' && v.fileType === FileType.CodeBehind,
       });
+    });
+  });
+  describe('processImports', function() {
+    beforeEach(() => {
+      config = _.clone(config);
+      config.sourcePath = `/Users/georgecook/Documents/h7ci/hope/smc/pot-smithsonian-channel-roku-xm/src`;
+      config.outputPath = `/Users/georgecook/Documents/h7ci/hope/brsxmlc/build`;
+      processor = new ProjectProcessor(config);
+      fs.removeSync(config.outputPath);
+      processor.clearFiles();
+      processor.copyFiles();
+      processor.createFileDescriptors();
+    });
+
+    it('updates the xml files', async () => {
+      await processor.processImports();
+      expect(true).to.not.be.true;
+    });
+
+    it('throws an error when an import is missing', () => {
+      config = _.clone(config);
+      config.filePattern = [
+        '**/*.brs',
+        '**/*.xml',
+        '!**/excluded/**/*'
+      ];
+      processor = new ProjectProcessor(config);
+      fs.removeSync(config.outputPath);
+      processor.clearFiles();
+      processor.copyFiles();
+      processor.createFileDescriptors();
+      expect( () => processor.processImports()).to.throw(Error);
     });
   });
 });

@@ -6,4 +6,5 @@ export class ProcessorSettings {
   public observeRegex = new RegExp(`"{`, `g`);
   public bindingRegex = new RegExp(`"{`, `g`);
   public bindingObserverRegex = new RegExp(`"{`, `g`);
+  public endOfXmlFileRegex = new RegExp(`</component>`, `gim`);
 }
