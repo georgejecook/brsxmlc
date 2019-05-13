@@ -3,7 +3,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inspect } from 'util';
 
-import FileDescriptor from './FileDescriptor';
+import File from './File';
 import ProjectFileMap from './ProjectFileMap';
 
 import { Program } from 'brightscript-language';
@@ -13,8 +13,11 @@ import { changeExtension } from './changeExtension';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
 import IncludeImporter from './IncludeImporter';
+import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
+import { getRegexMatchesValues } from './StringUtils';
+import * as _ from 'lodash';
 
 const debug = Debug('projectProcessor');
 
@@ -33,7 +36,7 @@ export class ProjectProcessor {
       throw new Error('Config does not contain outputPath property');
     }
     this._targetPath = path.resolve(this._config.outputPath);
-    this._fileMap = fileMap || new ProjectFileMap(this.config);
+    this._fileMap = fileMap || new ProjectFileMap();
     this._feedback = [];
     this._settings = new ProcessorSettings();
   }
@@ -82,7 +85,7 @@ export class ProjectProcessor {
     debug(`Running processor with config ${inspect(this.config)} `);
     this.clearFiles();
     this.copyFiles();
-    this.createFileDescriptors();
+    this.createFiles();
     //TODO - process bindings
     // - which will automatically add binding imports
     this.processImports();
@@ -92,12 +95,12 @@ export class ProjectProcessor {
   public async processImports() {
     debug(`Processing imports `);
     let includeImporter = new IncludeImporter(this);
-    this.fileMap.getAllDescriptors().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
+    this.fileMap.getAllFiles().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
       .forEach(async (descriptor) => {
         //includeImporter.identifyImports(descriptor);
       });
 
-    this.fileMap.getAllDescriptors().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
+    this.fileMap.getAllFiles().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
       .forEach((descriptor) => {
         includeImporter.addImportIncludes(descriptor);
       });
@@ -112,12 +115,12 @@ export class ProjectProcessor {
   }
 
   /**
-   * Find all files inside a dir, recursively and convert to fileDescriptors
+   * Find all files inside a dir, recursively and convert to files
    * @function getAllFiles
    * @return {string[]} Array with all file names that are inside the directory.
    * @param directory
    */
-  public async createFileDescriptors() {
+  public async createFiles() {
     let directory = this.config.outputPath;
 
     debug(`Creating file descriptors processor at path ${directory} `);
@@ -129,21 +132,21 @@ export class ProjectProcessor {
     //TODO - make async.
     //TODO - cachetimestamps for files - for performance
     const glob = require('glob-all');
-    let files = glob.sync(this.config.filePattern, { cwd: this.config.outputPath });
+    let files = glob.sync(this.config.filePattern, {cwd: this.config.outputPath});
     for (const file of files) {
       const extension = path.extname(file).toLowerCase();
       if (extension === '.brs' || extension === '.xml') {
         const projectPath = path.dirname(file);
         const fullPath = path.join(this.targetPath, projectPath);
         const filename = path.basename(file);
-        let existingDescriptor = this.fileMap.getDescriptor[file];
-        if (existingDescriptor) {
-          this.feedback.push(new FileFeedback(existingDescriptor, FileFeedbackType.Warning, `file ${directory}/${file} already has descriptor, skipping`));
+        let existingFile = this.fileMap.getFile[file];
+        if (existingFile) {
+          this.feedback.push(new FileFeedback(existingFile, FileFeedbackType.Warning, `file ${directory}/${file} already has descriptor, skipping`));
         } else {
           try {
-            await this.createDescriptor(fullPath, projectPath, filename, extension);
+            await this.createFile(fullPath, projectPath, filename, extension);
           } catch (e) {
-          //log the error, but don't fail this process because the file might be fixable later
+            //log the error, but don't fail this process because the file might be fixable later
             console.error(e);
           }
         }
@@ -158,39 +161,76 @@ export class ProjectProcessor {
    * @param filename
    * @param associatedFile
    */
-  public async createDescriptor(fullPath, projectPath, filename, extension) {
+  public async createFile(fullPath, projectPath, filename, extension, associatedFile: File = null): Promise<File> {
 
-    const fileDescriptor = new FileDescriptor(fullPath, projectPath, filename, extension);
+    const file = new File(fullPath, projectPath, filename, extension);
 
-    await this._program.addOrReplaceFile(fileDescriptor.fullPath.toLowerCase());
-    const associatedFile = await this.getAssociatedFile(fullPath, projectPath, filename, extension);
-
-    fileDescriptor.associatedFile = associatedFile;
-    if (associatedFile !== null) {
-      associatedFile.associatedFile = fileDescriptor;
+    await this._program.addOrReplaceFile(file.fullPath.toLowerCase());
+    if (!associatedFile) {
+      const associatedFile = await this.getAssociatedFile(file, fullPath, projectPath, filename, extension);
+      file.associatedFile = associatedFile;
+    } else {
+      file.associatedFile = associatedFile;
     }
-    this.fileMap.addDescriptor(fileDescriptor);
-    fileDescriptor.programFile = await this._program.addOrReplaceFile(fileDescriptor.fullPath.toLowerCase());
+    if (associatedFile) {
+      associatedFile.associatedFile = file;
+    }
+    file.programFile = await this._program.addOrReplaceFile(file.fullPath.toLowerCase(), file.getFileContents());
+    if (file.fileType === FileType.Brs || file.fileType === FileType.CodeBehind) {
+      file.namespace = this.getNamespaceFromFile(file);
+      file.importedNamespaceNames.concat(getRegexMatchesValues(file.getFileContents(), this.settings.importRegex, 2));
+    }
+    this.fileMap.addFile(file);
+    return file;
   }
 
-  public async getAssociatedFile(fullPath, projectPath, filename, extension) {
+  public async getAssociatedFile(file: File, fullPath: string, projectPath: string, filename: string, extension: string) {
     if (extension !== '.brs' && extension !== '.xml') {
       return null;
     }
     const otherExtension = extension === '.brs' ? '.xml' : '.brs';
     const otherFilename = changeExtension(filename, otherExtension);
-    let descriptor = this.fileMap.getDescriptor(otherFilename);
-    if (!descriptor) {
-      descriptor = fs.existsSync(path.join(fullPath, otherFilename)) ? new FileDescriptor(fullPath, projectPath, otherFilename, otherExtension) : null;
-      if (descriptor) {
-        this.fileMap.addDescriptor(descriptor);
-        descriptor.programFile = await this._program.addOrReplaceFile(descriptor.fullPath.toLowerCase());
+    let associatedFile = this.fileMap.getFile(otherFilename);
+    if (!associatedFile) {
+      if (fs.existsSync(path.join(fullPath, otherFilename))) {
+        this.createFile(fullPath, projectPath, otherFilename, otherExtension, file);
       }
     }
-    return descriptor;
   }
 
   public clearFiles() {
     fs.removeSync(this.config.outputPath);
+  }
+
+  public getNamespaceFromFile(file: File): Namespace {
+    let namespace: Namespace = null;
+    if (file && (file.fileType === FileType.CodeBehind || file.fileType === FileType.ViewXml)) {
+      let namespaceCount = 0;
+      let matches;
+      while (matches = this.settings.namespaceRegex.exec(file.getFileContents())) {
+        namespaceCount++;
+        if (namespaceCount > 1) {
+          const feedback = new FileFeedback(file, FileFeedbackType.Error, `More than one namespace defined
+        for file ${file.fullPath}`);
+          this.feedback.push(feedback);
+          feedback.throw();
+        } else if (matches.length > 0) {
+          const shortName = matches[1];
+          const name = matches[2];
+          namespace = new Namespace(name, shortName, file);
+          break;
+        }
+      }
+      if (namespace) {
+        const existingNamespace = this.fileMap.getNamespaceByName(namespace.name);
+        if (existingNamespace) {
+          const feedback = new FileFeedback(file, FileFeedbackType.Error, `Could not register namespace ${namespace.name},
+        for file ${file.fullPath}. It is already registered for file ${existingNamespace.file.fullPath}`);
+          this.feedback.push(feedback);
+          feedback.throw();
+        }
+      }
+    }
+    return namespace;
   }
 }

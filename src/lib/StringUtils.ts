@@ -9,3 +9,12 @@ export function spliceString(str: string, index: number, count: number, add: str
 
   return str.slice(0, index) + (add || '') + str.slice(index + count);
 }
+
+export function getRegexMatchesValues(input, regex, groupIndex): any[] {
+  let values = [];
+  let matches: any[];
+  while (matches = regex.exec(input)) {
+    values.push(matches[groupIndex]);
+  }
+  return values;
+}

@@ -1,4 +1,5 @@
-import FileDescriptor from './FileDescriptor';
+import File from './File';
+import { Error } from 'tslint/lib/error';
 
 export enum FileFeedbackType {
   Info = 'Info',
@@ -7,7 +8,7 @@ export enum FileFeedbackType {
 }
 
 export class FileFeedback {
-  constructor(public fileDescriptor: FileDescriptor,
+  constructor(public file: File,
               public feedbackType: FileFeedbackType,
               public message: string,
               public line?: number,
@@ -16,9 +17,13 @@ export class FileFeedback {
   }
 
   public toString(): string {
-    let fileName = this.fileDescriptor ? this.fileDescriptor.fullPath : 'No file';
+    let fileName = this.file ? this.file.fullPath : 'No file';
     let lineText = this.line ? this.line.toString() : '-';
     let charText = this.character ? this.character.toString() : '-';
     return `${this.feedbackType.toString()} - ${fileName}(${lineText}:${charText}) ${this.message}`;
+  }
+
+  public throw() {
+    throw new Error(this.message);
   }
 }

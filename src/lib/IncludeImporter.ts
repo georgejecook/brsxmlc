@@ -2,16 +2,18 @@
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import FileDescriptor from './FileDescriptor';
+import File from './File';
 
 import { FileType } from './FileType';
 
+import { XmlFile } from 'brightscript-language';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
+import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
-import { spliceString } from './StringUtils';
+import { getRegexMatchesValues, spliceString } from './StringUtils';
 
 /**
  * Manages importing includes for a given brs file
@@ -33,80 +35,106 @@ export default class IncludeImporter {
     return this.projectProcessor.feedback;
   }
 
-  public identifyImports(fileDescriptor: FileDescriptor) {
-    if (fileDescriptor.fileType !== FileType.CodeBehind && fileDescriptor.fileType !== FileType.Brs) {
-      throw new Error('was given a non-codebehind / Brs file');
+  public addImportsToXmlFile(file: File) {
+    if (file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
+      throw new Error('was given a non-xml file');
     }
-    let codeBehindContents = fileDescriptor.getFileContents();
-    //1. Get list of '@Import
-    const codeBehindImportNames = IncludeImporter.getRegexMatchesValues(codeBehindContents, this.settings.importRegex, 2);
-    if (_.isEmpty(codeBehindImportNames)) {
-      return;
-    }
-
-    let xmlImports = [];
-    if (fileDescriptor.fileType === FileType.CodeBehind) {
-      //get the imports from the xml file associated with this
-      //so we can remove any duplicate imports later on
-      let xmlContents = fileDescriptor.associatedFile.getFileContents();
-      xmlImports = IncludeImporter.getRegexMatchesValues(xmlContents, this.settings.importXMLRegex, 3);
-      xmlImports = xmlImports.map((i) => path.basename(i));
+    const rootNamespaceNames = new Set();
+    //1 add codebehind namespace names
+    if (file.associatedFile) {
+      this.addSetItems(rootNamespaceNames, file.associatedFile.importedNamespaceNames);
     }
 
-    //get all nestedDependencies
-    const allImportDescriptors = this.getAllImportDescriptors(fileDescriptor.filename, codeBehindImportNames);
+    //2 add namespace names from all imported scripts
+    const xmlFile = file.programFile as XmlFile;
+    for (const fileReference of xmlFile.getOwnScriptImports()) {
+      const importedFile = this.fileMap.getFileByPkgPath(fileReference.pkgPath);
+      if (!importedFile) {
+        const feedback = new FileFeedback(file, FileFeedbackType.Error, `xml file imports a file that cannot be found ${fileReference.pkgPath}`);
+        this.feedback.push(feedback);
+        feedback.throw();
+      }
+      this.addSetItems(rootNamespaceNames, importedFile.importedNamespaceNames);
+    }
 
-    //remove anything that's already present in the xml file
-    xmlImports.forEach((xmlImport) => {
-      delete allImportDescriptors[xmlImport];
-    });
+    //3 identify if the file is using bindings
+    if (file.bindings.length > 0) {
+      //TODO
+      rootNamespaceNames.add('ObservableMixin');
+      rootNamespaceNames.add('BaseObservable');
+    }
 
-    for (const key in allImportDescriptors) {
-      fileDescriptor.requiredImports.push(allImportDescriptors[key]);
+    //5 get all nested depende
+    const allNamespaceNames = new Set();
+    for (const namespaceName of rootNamespaceNames) {
+      this.addNestedNamespaces(file, namespaceName, allNamespaceNames);
+    }
+
+    //turn all names into namespaces
+    const namespaces = [];
+    for (const namespaceName of allNamespaceNames) {
+      namespaces.push(this.fileMap.getNamespaceByName(namespaceName));
+    }
+
+    //5 add script import tags to file
+    this.addImportIncludes(file, namespaces);
+  }
+
+  public addSetItems(setA, setB) {
+    for (const elem of setB) {
+      setA.add(elem);
     }
   }
 
-  /**
-   * keeps
-   * @param rootFilename
-   * @param importNames
-   */
-  private getAllImportDescriptors(rootFilename: string, importNames: string[]): { [filename: string]: FileDescriptor } {
-    const newImports = {};
-    importNames.forEach((importName) => {
-      let dependencyNames = this.fileMap.getImportDependenciesForFile(importName);
-      if (!dependencyNames) {
-        //look up the dependency, in the filemap
-        dependencyNames = this.getNestedDependencies(rootFilename, importName);
-        this.fileMap.setImportDependenciesForFile(rootFilename, dependencyNames);
+  private addNestedNamespaces(parentFile: File, parentNamespaceName: string, namespaceNames: Set<string>, parentSet: Set<string> = null) {
+    let parentNamespace = this.fileMap.getNamespaceByName(parentNamespaceName);
+    if (!parentNamespace) {
+      this.failWithMissingNamespace(parentFile, parentNamespaceName);
+    }
+    if (!parentSet) {
+      parentSet = new Set([parentNamespaceName]);
+    }
+    let file = parentNamespace.file;
+    for (const namespaceName of file.importedNamespaceNames) {
+      if (!namespaceNames.has(namespaceName)) {
+        let namespace = this.fileMap.getNamespaceByName(namespaceName);
+        if (!namespace) {
+          this.failWithMissingNamespace(file, namespaceName);
+        }
+        if (parentSet.has(namespaceName)) {
+          this.failWithCyclicalNamespace(file, parentNamespaceName, namespaceName);
+        }
+        const namespaceStack = new Set(parentSet);
+        namespaceStack.add(namespaceName);
+        this.addNestedNamespaces(file, namespaceName, namespaceNames, namespaceStack);
+        namespaceNames.add(namespaceName);
       }
+    }
+    namespaceNames.add(parentNamespaceName);
+  }
 
-      dependencyNames.forEach((dependencyName) => {
-        if (dependencyName === rootFilename) {
-          this.feedback.push(new FileFeedback(null, FileFeedbackType.Error, `Cyclical dependency discovered for ${rootFilename}`));
-          throw new Error(`cyclical dependency discovered for ${rootFilename}! ABORTING`);
-        }
+  public failWithMissingNamespace(file: File, namespaceName: string) {
+    const feedback = new FileFeedback(file, FileFeedbackType.Error, `Missing namespace - could not find a file that
+     declares the namespace ${namespaceName}`);
+    this.feedback.push(feedback);
+    feedback.throw();
+  }
 
-        const descriptor = this.fileMap.getDescriptor(dependencyName);
-        if (!descriptor) {
-          this.feedback.push(new FileFeedback(null, FileFeedbackType.Error, `[${rootFilename}] has missing dependency for ${dependencyName}! ABORTING`));
-          throw new Error(`[${rootFilename}] has missing dependency for ${dependencyName}! ABORTING`);
-        }
-
-        newImports[dependencyName] = descriptor;
-      });
-    });
-    return newImports;
+  public failWithCyclicalNamespace(file: File, sourceNamespaceName: string, namespaceName: string) {
+    const feedback = new FileFeedback(file, FileFeedbackType.Error, `Cyclical import detected - an infinite import cycle
+     was found on ${namespaceName} when processing import for ${sourceNamespaceName}`);
+    this.feedback.push(feedback);
+    feedback.throw();
   }
 
   /**
    * Responsible for updating the codebehind and xml files with the required imports
    */
-  public addImportIncludes(fileDescriptor: FileDescriptor) {
+  public addImportIncludes(file: File, namespaces: Namespace[]) {
     //for viewxml/codebehind files, we add the imports to xml - for pure brs files that's a moot point
-    if (fileDescriptor.fileType === FileType.CodeBehind && fileDescriptor.associatedFile) {
-      this.addImportIncludesToXML(fileDescriptor);
-      this.addMixinInitializersToBRSInit(fileDescriptor);
+    if (file.fileType === FileType.CodeBehind && file.associatedFile) {
+      this.addImportIncludesToXML(file, namespaces);
+      this.addMixinInitializersToBRSInit(file, namespaces);
     }
 
   }
@@ -116,7 +144,7 @@ export default class IncludeImporter {
    * to allow us to replace ONE LINE of code, and then put the actual mixin init methods in a method at the end of the file
    * this prevents us from screwing up the line numbering in the event of an error.
    */
-  private addMixinInitializersToBRSInit(fileDescriptor: FileDescriptor) {
+  private addMixinInitializersToBRSInit(file: File, namespaces: Namespace[]) {
     //TODO - note
     //1. Check that brs file has Mixin placeholder call '@Mixin'
     //if not - error
@@ -125,64 +153,35 @@ export default class IncludeImporter {
     //for each import, if it's a mixin, add a call to it there
   }
 
-  private addImportIncludesToXML(fileDescriptor: FileDescriptor) {
+  private addImportIncludesToXML(file: File, namespaces: Namespace[]) {
 
-    if (fileDescriptor.fileType !== FileType.CodeBehind && fileDescriptor.fileType !== FileType.Brs) {
-      this.feedback.push(new FileFeedback(fileDescriptor, FileFeedbackType.Error, `Was passed a non-brs/codebehind file`));
-      throw new Error('was given a non-codebehind / Brs file');
-    }
-
-    if (!fileDescriptor.associatedFile || fileDescriptor.associatedFile.fileType !== FileType.ViewXml) {
-      this.feedback.push(new FileFeedback(fileDescriptor, FileFeedbackType.Warning, `There was no xml file associated with the passed in file - cannot add imports to it's associated file`));
-      return;
+    if (file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
+      this.feedback.push(new FileFeedback(file, FileFeedbackType.Error, `Was passed a xml file`));
+      throw new Error('was given a non-xml file');
     }
 
     let imports = ``;
     let cwd = process.cwd();
-    fileDescriptor.requiredImports.forEach((descriptor) => {
-      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, descriptor.getPackagePath(this.fileMap.projectRoot, cwd))}`;
+    namespaces.forEach( (namespace) => {
+      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, namespace.file.pkgPath)}`;
     });
 
     //we place imports at the end of the file to ensure we don't screw up error line number reporting
 
-    let xmlContents = fileDescriptor.associatedFile.getFileContents();
+    let xmlContents = file.associatedFile.getFileContents();
     this.settings.endOfXmlFileRegex.lastIndex = 0;
     let result = this.settings.endOfXmlFileRegex.exec(xmlContents);
     if (result) {
       const insertionIndex = result.index; //TODO - get the end tag location, and put it on the line before
       xmlContents = spliceString(xmlContents, insertionIndex, 0, imports);
-      fileDescriptor.associatedFile.setFileContents(xmlContents);
-      fileDescriptor.associatedFile.saveFileContents();
+      file.associatedFile.setFileContents(xmlContents);
+      file.associatedFile.saveFileContents();
+      let xmlFile = file.programFile as XmlFile;
+      //TODO update xmlFile - re-add/ reprocess? or simply add it to the imports
     } else {
-      this.feedback.push(new FileFeedback(fileDescriptor.associatedFile, FileFeedbackType.Error, `xml file did not have end component tag`));
+      this.feedback.push(new FileFeedback(file.associatedFile, FileFeedbackType.Error, `xml file did not have end component tag`));
       throw new Error(`xml file did not have end component tag`);
     }
-  }
-
-  private static getRegexMatchesValues(input, regex, groupIndex) {
-    let values = [];
-    let matches: any[];
-    while (matches = regex.exec(input)) {
-      values.push(matches[groupIndex]);
-    }
-    return values;
-  }
-
-  private getNestedDependencies(filename, dependencyName, dependencyNames: string[] = []) {
-    if (!dependencyName.toLowerCase().endsWith('.brs')) {
-      dependencyName += '.brs';
-    }
-    const descriptor = this.fileMap.getDescriptor(dependencyName);
-    if (!descriptor) {
-      this.feedback.push(new FileFeedback(null, FileFeedbackType.Error, `[${filename}] has missing dependency for ${dependencyName}! ABORTING`));
-      throw new Error(`[${filename}] has missing dependency for ${dependencyName}! ABORTING`);
-    }
-    if (!dependencyNames.includes(dependencyName)) {
-      dependencyNames.push(dependencyName);
-      const nestedDependencies = IncludeImporter.getRegexMatchesValues(descriptor.getFileContents(), this.settings.importRegex, 2);
-      nestedDependencies.forEach((nestedDependency) => this.getNestedDependencies(filename + '.' + dependencyName, nestedDependency, dependencyNames));
-    }
-    return dependencyNames;
   }
 
 }

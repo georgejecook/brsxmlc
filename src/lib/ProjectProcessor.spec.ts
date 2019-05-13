@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 
 import { expect } from 'chai';
 
-import FileDescriptor from './FileDescriptor';
+import File from './File';
 import { FileType } from './FileType';
 import { ProcessorConfig } from './ProcessorConfig';
 import ProjectFileMap from './ProjectFileMap';
@@ -34,7 +34,7 @@ describe('Project Processor', function() {
     });
 
     it('allows overriding of filemap', function() {
-      const filemap = new ProjectFileMap(config);
+      const filemap = new ProjectFileMap();
       processor = new ProjectProcessor(config, filemap);
 
       expect(processor.config).to.equal(config);
@@ -65,11 +65,11 @@ describe('Project Processor', function() {
     });
   });
 
-  describe('createFileDescriptors', function() {
+  describe('createFiles', function() {
     beforeEach(() => {
       processor.clearFiles();
       processor.copyFiles();
-      processor.createFileDescriptors();
+      processor.createFiles();
     });
 
     it('populates descriptors', () => {
@@ -79,7 +79,7 @@ describe('Project Processor', function() {
       console.debug(processor.warnings);
       console.debug('errors');
       console.debug(processor.errors);
-      processor.fileMap.allFiles.forEach((v: FileDescriptor) => console.debug(v.toString()));
+      processor.fileMap.allFiles.forEach((v: File) => console.debug(v.toString()));
     });
 
     it('does not include excluded folders', () => {
@@ -103,13 +103,13 @@ describe('Project Processor', function() {
 
     it('correctly identifies brs files', () => {
       expect(processor.fileMap.allFiles).containSubset({
-        'Utils.brs': (v: FileDescriptor) => v.filename === 'Utils.brs' && v.fileType === FileType.Brs,
-        'BadImport.brs': (v: FileDescriptor) => v.filename === 'BadImport.brs' && v.fileType === FileType.Brs,
-        'FocusMixin.brs': (v: FileDescriptor) => v.filename === 'FocusMixin.brs' && v.fileType === FileType.Brs,
-        'LogMixin.brs': (v: FileDescriptor) => v.filename === 'LogMixin.brs' && v.fileType === FileType.Brs,
-        'MultipleMixin.brs': (v: FileDescriptor) => v.filename === 'MultipleMixin.brs' && v.fileType === FileType.Brs,
-        'NetMixin.brs': (v: FileDescriptor) => v.filename === 'NetMixin.brs' && v.fileType === FileType.Brs,
-        'TextMixin.brs': (v: FileDescriptor) => v.filename === 'TextMixin.brs' && v.fileType === FileType.Brs
+        'Utils.brs': (v: File) => v.filename === 'Utils.brs' && v.fileType === FileType.Brs,
+        'BadImport.brs': (v: File) => v.filename === 'BadImport.brs' && v.fileType === FileType.Brs,
+        'FocusMixin.brs': (v: File) => v.filename === 'FocusMixin.brs' && v.fileType === FileType.Brs,
+        'LogMixin.brs': (v: File) => v.filename === 'LogMixin.brs' && v.fileType === FileType.Brs,
+        'MultipleMixin.brs': (v: File) => v.filename === 'MultipleMixin.brs' && v.fileType === FileType.Brs,
+        'NetMixin.brs': (v: File) => v.filename === 'NetMixin.brs' && v.fileType === FileType.Brs,
+        'TextMixin.brs': (v: File) => v.filename === 'TextMixin.brs' && v.fileType === FileType.Brs
       });
 
     });
@@ -118,25 +118,25 @@ describe('Project Processor', function() {
       const f = processor.fileMap.allFiles['testXMLOnly.xml'];
       console.debug(f.fileType);
       expect(processor.fileMap.allFiles).containSubset({
-        'testXMLOnly.xml': (v: FileDescriptor) => v.filename === 'testXMLOnly.xml' && v.fileType === FileType.Xml
+        'testXMLOnly.xml': (v: File) => v.filename === 'testXMLOnly.xml' && v.fileType === FileType.Xml
       });
     });
 
     it('correctly identifies ViewXml files', () => {
       expect(processor.fileMap.allFiles).containSubset({
-        'test.xml': (v: FileDescriptor) => v.filename === 'test.xml' && v.fileType === FileType.ViewXml,
-        'test2imports.xml': (v: FileDescriptor) => v.filename === 'test2imports.xml' && v.fileType === FileType.ViewXml,
-        'testCascadingImports.xml': (v: FileDescriptor) => v.filename === 'testCascadingImports.xml' && v.fileType === FileType.ViewXml,
-        'testMissingImport.xml': (v: FileDescriptor) => v.filename === 'testMissingImport.xml' && v.fileType === FileType.ViewXml,
+        'test.xml': (v: File) => v.filename === 'test.xml' && v.fileType === FileType.ViewXml,
+        'test2imports.xml': (v: File) => v.filename === 'test2imports.xml' && v.fileType === FileType.ViewXml,
+        'testCascadingImports.xml': (v: File) => v.filename === 'testCascadingImports.xml' && v.fileType === FileType.ViewXml,
+        'testMissingImport.xml': (v: File) => v.filename === 'testMissingImport.xml' && v.fileType === FileType.ViewXml,
       });
     });
 
     it('correctly identifies CodeBehind files', () => {
       expect(processor.fileMap.allFiles).containSubset({
-        'test.brs': (v: FileDescriptor) => v.filename === 'test.brs' && v.fileType === FileType.CodeBehind,
-        'test2imports.brs': (v: FileDescriptor) => v.filename === 'test2imports.brs' && v.fileType === FileType.CodeBehind,
-        'testCascadingImports.brs': (v: FileDescriptor) => v.filename === 'testCascadingImports.brs' && v.fileType === FileType.CodeBehind,
-        'testMissingImport.brs': (v: FileDescriptor) => v.filename === 'testMissingImport.brs' && v.fileType === FileType.CodeBehind,
+        'test.brs': (v: File) => v.filename === 'test.brs' && v.fileType === FileType.CodeBehind,
+        'test2imports.brs': (v: File) => v.filename === 'test2imports.brs' && v.fileType === FileType.CodeBehind,
+        'testCascadingImports.brs': (v: File) => v.filename === 'testCascadingImports.brs' && v.fileType === FileType.CodeBehind,
+        'testMissingImport.brs': (v: File) => v.filename === 'testMissingImport.brs' && v.fileType === FileType.CodeBehind,
       });
     });
   });
@@ -149,7 +149,7 @@ describe('Project Processor', function() {
       fs.removeSync(config.outputPath);
       processor.clearFiles();
       processor.copyFiles();
-      processor.createFileDescriptors();
+      processor.createFiles();
     });
 
     it('updates the xml files', async () => {
@@ -168,7 +168,7 @@ describe('Project Processor', function() {
       fs.removeSync(config.outputPath);
       processor.clearFiles();
       processor.copyFiles();
-      processor.createFileDescriptors();
+      processor.createFiles();
       expect( () => processor.processImports()).to.throw(Error);
     });
   });

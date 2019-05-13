@@ -3,7 +3,7 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import FileDescriptor from './FileDescriptor';
+import File from './File';
 import IncludeImporter from './IncludeImporter';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
@@ -24,7 +24,7 @@ describe('Include importer', function() {
     processor = new ProjectProcessor(config, fileMap);
     processor.clearFiles();
     processor.copyFiles();
-    processor.createFileDescriptors();
+    processor.createFiles();
   });
 
   describe('Initialization', function() {
@@ -81,7 +81,7 @@ describe('Include importer', function() {
     });
 
     it('identifies cascading imports', function() {
-      const codeBehind = new FileDescriptor(projectPath, importFilesPath, `testCascadingImports.brs`, '.brs');
+      const codeBehind = new File(projectPath, importFilesPath, `testCascadingImports.brs`, '.brs');
       const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       importer.identifyImports(codeBehind);
@@ -91,7 +91,7 @@ describe('Include importer', function() {
     });
 
     it('fails on cascading missing imports', function() {
-      const codeBehind = new FileDescriptor(config.projectPath, importFilesPath,  `testCascadingMissingImport.brs`, '.brs');
+      const codeBehind = new File(config.projectPath, importFilesPath,  `testCascadingMissingImport.brs`, '.brs');
       const importer = new IncludeImporter(processor);
       expect(importer).to.not.be.null;
       //expect error
@@ -102,13 +102,13 @@ describe('Include importer', function() {
 });
 
 function createCodeBehind(path, name) {
-  const codeBehind = new FileDescriptor(projectPath, path, `${name}.brs`, '.brs');
-  const view = new FileDescriptor(projectPath, path, `${name}.xml`, '.xml');
+  const codeBehind = new File(projectPath, path, `${name}.brs`, '.brs');
+  const view = new File(projectPath, path, `${name}.xml`, '.xml');
   codeBehind.associatedFile = view;
   view.associatedFile = codeBehind;
   return codeBehind;
 }
 
 function createFile(path, extension) {
-  return new FileDescriptor(config.projectPath, path, `test${extension}`, '.extension');
+  return new File(config.projectPath, path, `test${extension}`, '.extension');
 }

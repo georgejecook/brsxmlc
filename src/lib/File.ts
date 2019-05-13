@@ -3,12 +3,14 @@ import * as path from 'path';
 
 import { BrsFile } from 'brightscript-language';
 import { XmlFile } from 'brightscript-language';
+import Binding from './Bindings';
 import { FileType } from './FileType';
+import Namespace from './NameSpace';
 
 /**
  * describes a file in our project.
  */
-export default class FileDescriptor {
+export default class File {
 
   constructor(fsPath: string, projectPath: string, filename: string, extension: string) {
     this.filename = filename;
@@ -18,9 +20,8 @@ export default class FileDescriptor {
     this._pkgUri = `pkg://${path.join(projectPath, filename)}`;
     this.projectPath = projectPath;
     this.extension = extension;
-    this.currentImportIds = [];
-    this.requireImportIds = [];
-    this._requiredImports = [];
+    this._importedNamespaceNames = new Set();
+    this._bindings = [];
     this.associatedFile = null;
     this.parentFile = null;
   }
@@ -32,12 +33,13 @@ export default class FileDescriptor {
   private _fullPath: string;
   public projectPath: string;
   public extension: string;
-  public currentImportIds: string[];
-  private requireImportIds: string[];
-  private _requiredImports: FileDescriptor[];
-  public associatedFile?: FileDescriptor;
-  public parentFile?: FileDescriptor;
+  public associatedFile?: File;
+  public parentFile?: File;
   public programFile: XmlFile | BrsFile;
+
+  private readonly _importedNamespaceNames: Set<string>;
+  private readonly _bindings: Binding[];
+  public namespace?: Namespace;
 
   private _fileContents: string;
 
@@ -52,6 +54,10 @@ export default class FileDescriptor {
     }
   }
 
+  public get bindings() {
+    return this._bindings;
+  }
+
   public get isMixin() {
     return this.filename.endsWith('Mixin');
   }
@@ -60,8 +66,8 @@ export default class FileDescriptor {
     return this._fsPath;
   }
 
-  public get requiredImports(): FileDescriptor[] {
-    return this._requiredImports;
+  public get importedNamespaceNames(): Set<string> {
+    return this._importedNamespaceNames;
   }
 
   public get fullPath() {
