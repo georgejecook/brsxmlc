@@ -1,9 +1,9 @@
 import File from './File';
 
 export default class Namespace {
-  constructor(name: string, shortName: string, file : File) {
-    this._name = name;
-    this._shortName = shortName;
+  constructor(name: string, file: File, shortName?: string) {
+    this._name = !name || name.trim() === '' ? shortName : name;
+    this._shortName = !shortName || shortName.trim() === '' ? name : shortName;
     this._file = file;
   }
 

@@ -13,12 +13,12 @@ import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
-import { getRegexMatchesValues, spliceString } from './StringUtils';
+import { addSetItems, spliceString } from './Utils';
 
 /**
  * Manages importing includes for a given brs file
  */
-export default class IncludeImporter {
+export default class ImportProcessor {
   constructor(projectProcessor: ProjectProcessor) {
     this.settings = new ProcessorSettings();
     this.config = projectProcessor.config;
@@ -36,13 +36,21 @@ export default class IncludeImporter {
   }
 
   public addImportsToXmlFile(file: File) {
-    if (file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
+    if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
+      throw new Error('was given a non-xml file');
+    }
+    const importedNamespaces = this.getImportedNamespaces(file);
+    this.addImportCodeToFile(file, importedNamespaces);
+  }
+
+  public getImportedNamespaces(file: File): Namespace[] {
+    if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
       throw new Error('was given a non-xml file');
     }
     const rootNamespaceNames = new Set();
     //1 add codebehind namespace names
     if (file.associatedFile) {
-      this.addSetItems(rootNamespaceNames, file.associatedFile.importedNamespaceNames);
+      addSetItems(rootNamespaceNames, file.associatedFile.importedNamespaceNames);
     }
 
     //2 add namespace names from all imported scripts
@@ -53,8 +61,10 @@ export default class IncludeImporter {
         const feedback = new FileFeedback(file, FileFeedbackType.Error, `xml file imports a file that cannot be found ${fileReference.pkgPath}`);
         this.feedback.push(feedback);
         feedback.throw();
+      } else if (importedFile === file.associatedFile) {
+        continue;
       }
-      this.addSetItems(rootNamespaceNames, importedFile.importedNamespaceNames);
+      addSetItems(rootNamespaceNames, importedFile.importedNamespaceNames);
     }
 
     //3 identify if the file is using bindings
@@ -75,15 +85,7 @@ export default class IncludeImporter {
     for (const namespaceName of allNamespaceNames) {
       namespaces.push(this.fileMap.getNamespaceByName(namespaceName));
     }
-
-    //5 add script import tags to file
-    this.addImportIncludes(file, namespaces);
-  }
-
-  public addSetItems(setA, setB) {
-    for (const elem of setB) {
-      setA.add(elem);
-    }
+    return namespaces;
   }
 
   private addNestedNamespaces(parentFile: File, parentNamespaceName: string, namespaceNames: Set<string>, parentSet: Set<string> = null) {
@@ -130,13 +132,12 @@ export default class IncludeImporter {
   /**
    * Responsible for updating the codebehind and xml files with the required imports
    */
-  public addImportIncludes(file: File, namespaces: Namespace[]) {
+  public addImportCodeToFile(file: File, namespaces: Namespace[]) {
     //for viewxml/codebehind files, we add the imports to xml - for pure brs files that's a moot point
     if (file.fileType === FileType.CodeBehind && file.associatedFile) {
       this.addImportIncludesToXML(file, namespaces);
       this.addMixinInitializersToBRSInit(file, namespaces);
     }
-
   }
 
   /**

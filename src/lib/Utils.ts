@@ -18,3 +18,9 @@ export function getRegexMatchesValues(input, regex, groupIndex): any[] {
   }
   return values;
 }
+
+export function addSetItems(setA, setB) {
+  for (const elem of setB) {
+    setA.add(elem);
+  }
+}

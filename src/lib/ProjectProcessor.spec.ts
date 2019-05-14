@@ -6,6 +6,7 @@ import { expect } from 'chai';
 
 import File from './File';
 import { FileType } from './FileType';
+import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
@@ -66,13 +67,13 @@ describe('Project Processor', function() {
   });
 
   describe('createFiles', function() {
-    beforeEach(() => {
+    beforeEach(async () => {
       processor.clearFiles();
       processor.copyFiles();
-      processor.createFiles();
+      await processor.createFiles();
     });
 
-    it('populates descriptors', () => {
+    it('populates files', () => {
       //TODO test warnings and errors!
       console.debug('finished processing map');
       console.debug('warnings');
@@ -83,8 +84,6 @@ describe('Project Processor', function() {
     });
 
     it('does not include excluded folders', () => {
-      //TODO let config do this
-
       expect(processor.fileMap.allFiles).not.contain.keys([
         'test2.xml',
         'test2importsExcluded.xml',
@@ -102,74 +101,156 @@ describe('Project Processor', function() {
     });
 
     it('correctly identifies brs files', () => {
-      expect(processor.fileMap.allFiles).containSubset({
-        'Utils.brs': (v: File) => v.filename === 'Utils.brs' && v.fileType === FileType.Brs,
-        'BadImport.brs': (v: File) => v.filename === 'BadImport.brs' && v.fileType === FileType.Brs,
-        'FocusMixin.brs': (v: File) => v.filename === 'FocusMixin.brs' && v.fileType === FileType.Brs,
-        'LogMixin.brs': (v: File) => v.filename === 'LogMixin.brs' && v.fileType === FileType.Brs,
-        'MultipleMixin.brs': (v: File) => v.filename === 'MultipleMixin.brs' && v.fileType === FileType.Brs,
-        'NetMixin.brs': (v: File) => v.filename === 'NetMixin.brs' && v.fileType === FileType.Brs,
-        'TextMixin.brs': (v: File) => v.filename === 'TextMixin.brs' && v.fileType === FileType.Brs
-      });
+      expect(processor.fileMap.getAllFiles().map( (file) => {
+        return { filename: file.filename, fileType: file.fileType };
+      })).containSubset([
+        { filename: 'Utils.brs', fileType: FileType.Brs },
+        { filename: 'BadImport.brs', fileType: FileType.Brs },
+        { filename: 'FocusMixin.brs', fileType: FileType.Brs },
+        { filename: 'LogMixin.brs', fileType: FileType.Brs },
+        { filename: 'MultipleMixin.brs', fileType: FileType.Brs },
+        { filename: 'NetMixin.brs', fileType: FileType.Brs },
+        { filename: 'TextMixin.brs', fileType: FileType.Brs },
+      ]);
 
     });
 
     it('correctly identifies xml files', () => {
-      const f = processor.fileMap.allFiles['testXMLOnly.xml'];
-      console.debug(f.fileType);
-      expect(processor.fileMap.allFiles).containSubset({
-        'testXMLOnly.xml': (v: File) => v.filename === 'testXMLOnly.xml' && v.fileType === FileType.Xml
-      });
+      expect(processor.fileMap.getAllFiles().map( (file) => {
+        return { filename: file.filename, fileType: file.fileType };
+      })).containSubset([
+        { filename: 'testXMLOnly.xml', fileType: FileType.Xml },
+      ]);
     });
 
     it('correctly identifies ViewXml files', () => {
-      expect(processor.fileMap.allFiles).containSubset({
-        'test.xml': (v: File) => v.filename === 'test.xml' && v.fileType === FileType.ViewXml,
-        'test2imports.xml': (v: File) => v.filename === 'test2imports.xml' && v.fileType === FileType.ViewXml,
-        'testCascadingImports.xml': (v: File) => v.filename === 'testCascadingImports.xml' && v.fileType === FileType.ViewXml,
-        'testMissingImport.xml': (v: File) => v.filename === 'testMissingImport.xml' && v.fileType === FileType.ViewXml,
-      });
+      expect(processor.fileMap.getAllFiles().map( (file) => {
+        return { filename: file.filename, fileType: file.fileType };
+      })).containSubset([
+        { filename: 'test.xml', fileType: FileType.ViewXml },
+        { filename: 'test2imports.xml', fileType: FileType.ViewXml },
+        { filename: 'testCascadingImports.xml', fileType: FileType.ViewXml },
+      ]);
     });
 
     it('correctly identifies CodeBehind files', () => {
-      expect(processor.fileMap.allFiles).containSubset({
-        'test.brs': (v: File) => v.filename === 'test.brs' && v.fileType === FileType.CodeBehind,
-        'test2imports.brs': (v: File) => v.filename === 'test2imports.brs' && v.fileType === FileType.CodeBehind,
-        'testCascadingImports.brs': (v: File) => v.filename === 'testCascadingImports.brs' && v.fileType === FileType.CodeBehind,
-        'testMissingImport.brs': (v: File) => v.filename === 'testMissingImport.brs' && v.fileType === FileType.CodeBehind,
-      });
+      expect(processor.fileMap.getAllFiles().map( (file) => {
+        return { filename: file.filename, fileType: file.fileType };
+      })).containSubset([
+        { filename: 'test.brs', fileType: FileType.CodeBehind },
+        { filename: 'test2imports.brs', fileType: FileType.CodeBehind },
+        { filename: 'testCascadingImports.brs', fileType: FileType.CodeBehind },
+      ]);
+    });
+
+    it('correctly sets namespaces', () => {
+      expect([...processor.fileMap.allNamespaces.values()]).to.have.length(6);
+      let file = processor.fileMap.getFileByNamespaceName('Utils');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('Utils.brs');
+      expect(file.namespace.name).to.equal('Utils');
+
+      file = processor.fileMap.getFileByNamespaceName('FocusMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('FocusMixin.brs');
+      expect(file.namespace.name).to.equal('FocusMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('MultipleMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('MultipleMixin.brs');
+      expect(file.namespace.name).to.equal('MultipleMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('TextMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('TextMixin.brs');
+      expect(file.namespace.name).to.equal('TextMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('LogMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('LogMixin.brs');
+      expect(file.namespace.name).to.equal('LogMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('NetMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('NetMixin.brs');
+      expect(file.namespace.name).to.equal('NetMixin');
     });
   });
-  describe('processImports', function() {
+
+  describe('getNamespaceFromFile', function() {
     beforeEach(() => {
       config = _.clone(config);
-      config.sourcePath = `/Users/georgecook/Documents/h7ci/hope/smc/pot-smithsonian-channel-roku-xm/src`;
-      config.outputPath = `/Users/georgecook/Documents/h7ci/hope/brsxmlc/build`;
       processor = new ProjectProcessor(config);
-      fs.removeSync(config.outputPath);
-      processor.clearFiles();
-      processor.copyFiles();
-      processor.createFiles();
     });
 
-    it('updates the xml files', async () => {
-      await processor.processImports();
-      expect(true).to.not.be.true;
+    it('empty file', async () => {
+      const file = new File('', 'source', 'file.brs', '.brs');
+      file.setFileContents(``);
+      const ns = processor.getNamespaceFromFile(file);
+      expect(ns).to.be.null;
     });
 
-    it('throws an error when an import is missing', () => {
-      config = _.clone(config);
-      config.filePattern = [
-        '**/*.brs',
-        '**/*.xml',
-        '!**/excluded/**/*'
-      ];
-      processor = new ProjectProcessor(config);
-      fs.removeSync(config.outputPath);
-      processor.clearFiles();
-      processor.copyFiles();
-      processor.createFiles();
-      expect( () => processor.processImports()).to.throw(Error);
+    it('non brs file', async () => {
+      const file = new File('', 'source', 'file.xml', '.xml');
+      file.setFileContents(``);
+      const ns = processor.getNamespaceFromFile(file);
+      expect(ns).to.be.null;
+    });
+
+    it('no namespaces', async () => {
+      const file = new File('', 'source', 'file.brs', '.brs');
+      file.setFileContents(`
+      function init()
+      end function
+      `);
+      const ns = processor.getNamespaceFromFile(file);
+      expect(ns).to.be.null;
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('namespace short and long name', async () => {
+      const file = new File('', 'source', 'file.brs', '.brs');
+      file.setFileContents(`
+      '@Namespace MNS MyNamespace
+      function init()
+      end function
+      `);
+      const ns = processor.getNamespaceFromFile(file);
+      expect(ns).to.not.be.null;
+      expect(ns.file).to.equal(file);
+      expect(ns.shortName).to.equal('MNS');
+      expect(ns.name).to.equal('MyNamespace');
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('namespace long name', async () => {
+      const file = new File('', 'source', 'file.brs', '.brs');
+      file.setFileContents(`
+      '@Namespace MyNamespace
+      function init()
+      end function
+      `);
+      const ns = processor.getNamespaceFromFile(file);
+      expect(ns).to.not.be.null;
+      expect(ns.file).to.equal(file);
+      expect(ns.shortName).to.equal('MyNamespace');
+      expect(ns.name).to.equal('MyNamespace');
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('duplicate', async () => {
+      const file = new File('', 'source', 'file.brs', '.brs');
+      file.setFileContents(`
+      '@Namespace MyNamespace
+      function init()
+      end function
+      `);
+      const file2 = new File('', 'source', 'file2.brs', '.brs');
+      const ns = new Namespace('MyNamespace', file2);
+      processor.fileMap.allNamespaces.set('MyNamespace'.toLowerCase(), ns);
+      expect(() => processor.getNamespaceFromFile(file)).to.throw(`Could not register namespace MyNamespace,
+        for file file.brs. It is already registered for file file2.brs`);
+      expect(processor.errors).to.not.be.empty;
     });
   });
 });

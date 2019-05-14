@@ -34,27 +34,27 @@ export default class ProjectFileMap {
   }
 
   public getFile(fullPath: string): File {
-    return this._allFiles.get(fullPath);
+    return this._allFiles.get(fullPath.toLowerCase());
   }
 
   public getFileByPkgPath(pkgPath: string): File {
-    return this._filesByPkgPath.get(pkgPath);
+    return this._filesByPkgPath.get(pkgPath.toLowerCase());
   }
 
   public getNamespaceByName(name: string): Namespace {
-    return this._namespacesByName.get(name);
+    return this._namespacesByName.get(name.toLowerCase());
   }
 
   public getFileByNamespaceName(name: string): File {
-    const namespace = this.getNamespaceByName(name);
+    const namespace = this.getNamespaceByName(name.toLowerCase());
     return namespace ? namespace.file : null;
   }
 
   public addFile(file: File) {
-    this._allFiles.set(file.fullPath, file);
-    this._filesByPkgPath.set(file.pkgPath, file);
+    this._allFiles.set(file.fullPath.toLowerCase(), file);
+    this._filesByPkgPath.set(file.pkgPath.toLowerCase(), file);
     if (file.namespace) {
-      this._namespacesByName.set(file.namespace.name, file.namespace);
+      this._namespacesByName.set(file.namespace.name.toLowerCase(), file.namespace);
     }
   }
 }

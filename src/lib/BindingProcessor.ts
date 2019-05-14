@@ -15,8 +15,7 @@ export class BindingProcessor {
   private config: ProcessorConfig;
   private fileMap: ProjectFileMap;
   private projectProcessor: ProjectProcessor;
-  private settings: ProcessorSettings;
-
+  private sett
   private get feedback(): FileFeedback[] {
     return this.projectProcessor.feedback;
   }

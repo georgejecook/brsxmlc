@@ -16,7 +16,7 @@ describe('Project File map', function() {
 
     it('correctly initializes with preset files and import dictionary, which are used for unit testing', function() {
       const file = new File('fsPath', 'projectPath', 'filename.brs', '.brs');
-      const ns = new Namespace('T', 'Test', file);
+      const ns = new Namespace('T', file, 'Test');
       file.namespace = ns;
 
       const fileMap = new ProjectFileMap();

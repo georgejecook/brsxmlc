@@ -1,3 +1,4 @@
+'@Namespace MM MultipleMixin
 '@Import TextMixin
 '@Import BaseMixin
 

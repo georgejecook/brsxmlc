@@ -12,12 +12,11 @@ import { BrsConfig } from 'brightscript-language/dist/BrsConfig';
 import { changeExtension } from './changeExtension';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
-import IncludeImporter from './IncludeImporter';
+import ImportProcessor from './ImportProcessor';
 import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
-import { getRegexMatchesValues } from './StringUtils';
-import * as _ from 'lodash';
+import { addSetItems, getRegexMatchesValues } from './Utils';
 
 const debug = Debug('projectProcessor');
 
@@ -88,21 +87,18 @@ export class ProjectProcessor {
     this.createFiles();
     //TODO - process bindings
     // - which will automatically add binding imports
-    this.processImports();
+    //this.processImports();
 
   }
 
   public async processImports() {
     debug(`Processing imports `);
-    let includeImporter = new IncludeImporter(this);
-    this.fileMap.getAllFiles().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
-      .forEach(async (descriptor) => {
-        //includeImporter.identifyImports(descriptor);
-      });
+    let includeImporter = new ImportProcessor(this);
 
-    this.fileMap.getAllFiles().filter((descriptor) => descriptor.fileType === FileType.CodeBehind)
-      .forEach((descriptor) => {
-        includeImporter.addImportIncludes(descriptor);
+    this.fileMap.getAllFiles().filter((file) => file.fileType === FileType.Xml
+      || file.fileType === FileType.ViewXml)
+      .forEach((file) => {
+        includeImporter.addImportsToXmlFile(file);
       });
   }
 
@@ -123,7 +119,7 @@ export class ProjectProcessor {
   public async createFiles() {
     let directory = this.config.outputPath;
 
-    debug(`Creating file descriptors processor at path ${directory} `);
+    debug(`Creating file files processor at path ${directory} `);
 
     let normalizedOptions = await util.normalizeAndResolveConfig(this._builderConfig);
 
@@ -132,7 +128,7 @@ export class ProjectProcessor {
     //TODO - make async.
     //TODO - cachetimestamps for files - for performance
     const glob = require('glob-all');
-    let files = glob.sync(this.config.filePattern, {cwd: this.config.outputPath});
+    let files = glob.sync(this.config.filePattern, { cwd: this.config.outputPath });
     for (const file of files) {
       const extension = path.extname(file).toLowerCase();
       if (extension === '.brs' || extension === '.xml') {
@@ -141,7 +137,7 @@ export class ProjectProcessor {
         const filename = path.basename(file);
         let existingFile = this.fileMap.getFile[file];
         if (existingFile) {
-          this.feedback.push(new FileFeedback(existingFile, FileFeedbackType.Warning, `file ${directory}/${file} already has descriptor, skipping`));
+          this.feedback.push(new FileFeedback(existingFile, FileFeedbackType.Warning, `file ${directory}/${file} already has file, skipping`));
         } else {
           try {
             await this.createFile(fullPath, projectPath, filename, extension);
@@ -152,7 +148,7 @@ export class ProjectProcessor {
         }
       }
     }
-    debug.log(`finished creating file descriptors`);
+    debug(`finished creating file files`);
   }
 
   /**
@@ -178,24 +174,27 @@ export class ProjectProcessor {
     file.programFile = await this._program.addOrReplaceFile(file.fullPath.toLowerCase(), file.getFileContents());
     if (file.fileType === FileType.Brs || file.fileType === FileType.CodeBehind) {
       file.namespace = this.getNamespaceFromFile(file);
-      file.importedNamespaceNames.concat(getRegexMatchesValues(file.getFileContents(), this.settings.importRegex, 2));
+      addSetItems(file.importedNamespaceNames,
+        getRegexMatchesValues(file.getFileContents(), this.settings.importRegex, 2));
     }
     this.fileMap.addFile(file);
     return file;
   }
 
-  public async getAssociatedFile(file: File, fullPath: string, projectPath: string, filename: string, extension: string) {
+  public async getAssociatedFile(file: File, fullPath: string, projectPath: string, filename: string, extension: string): Promise<File> {
     if (extension !== '.brs' && extension !== '.xml') {
       return null;
     }
     const otherExtension = extension === '.brs' ? '.xml' : '.brs';
     const otherFilename = changeExtension(filename, otherExtension);
-    let associatedFile = this.fileMap.getFile(otherFilename);
+    const otherPath = path.join(fullPath, otherFilename);
+    let associatedFile = this.fileMap.getFile(otherPath);
     if (!associatedFile) {
-      if (fs.existsSync(path.join(fullPath, otherFilename))) {
-        this.createFile(fullPath, projectPath, otherFilename, otherExtension, file);
+      if (fs.existsSync(otherPath)) {
+        associatedFile = await this.createFile(fullPath, projectPath, otherFilename, otherExtension, file);
       }
     }
+    return associatedFile;
   }
 
   public clearFiles() {
@@ -204,7 +203,7 @@ export class ProjectProcessor {
 
   public getNamespaceFromFile(file: File): Namespace {
     let namespace: Namespace = null;
-    if (file && (file.fileType === FileType.CodeBehind || file.fileType === FileType.ViewXml)) {
+    if (file && (file.fileType === FileType.CodeBehind || file.fileType === FileType.Brs)) {
       let namespaceCount = 0;
       let matches;
       while (matches = this.settings.namespaceRegex.exec(file.getFileContents())) {
@@ -214,10 +213,10 @@ export class ProjectProcessor {
         for file ${file.fullPath}`);
           this.feedback.push(feedback);
           feedback.throw();
-        } else if (matches.length > 0) {
-          const shortName = matches[1];
-          const name = matches[2];
-          namespace = new Namespace(name, shortName, file);
+        } else if (matches.length > 3) {
+          const shortName = matches[2];
+          const name = matches[3];
+          namespace = new Namespace(name, file, shortName);
           break;
         }
       }

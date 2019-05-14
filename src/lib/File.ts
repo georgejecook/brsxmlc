@@ -24,6 +24,7 @@ export default class File {
     this._bindings = [];
     this.associatedFile = null;
     this.parentFile = null;
+    this._fileContents = null;
   }
 
   public filename: string;
@@ -91,7 +92,7 @@ export default class File {
   }
 
   public getFileContents(): string {
-    if (!this._fileContents) {
+    if (this._fileContents === null) {
       this._fileContents = fs.readFileSync(this.fullPath, 'utf8');
     }
     return this._fileContents;

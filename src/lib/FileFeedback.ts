@@ -1,5 +1,4 @@
 import File from './File';
-import { Error } from 'tslint/lib/error';
 
 export enum FileFeedbackType {
   Info = 'Info',
