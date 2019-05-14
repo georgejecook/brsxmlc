@@ -3,6 +3,7 @@ import * as path from 'path';
 
 import { BrsFile } from 'brightscript-language';
 import { XmlFile } from 'brightscript-language';
+
 import Binding from './Bindings';
 import { FileType } from './FileType';
 import Namespace from './NameSpace';

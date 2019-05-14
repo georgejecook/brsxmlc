@@ -1,21 +1,20 @@
+import { Program } from 'brightscript-language';
+import { util } from 'brightscript-language';
+import { BrsConfig } from 'brightscript-language/dist/BrsConfig';
 import * as Debug from 'debug';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inspect } from 'util';
 
-import File from './File';
-import ProjectFileMap from './ProjectFileMap';
-
-import { Program } from 'brightscript-language';
-import { util } from 'brightscript-language';
-import { BrsConfig } from 'brightscript-language/dist/BrsConfig';
 import { changeExtension } from './changeExtension';
+import File from './File';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
 import ImportProcessor from './ImportProcessor';
 import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
+import ProjectFileMap from './ProjectFileMap';
 import { addSetItems, getRegexMatchesValues } from './Utils';
 
 const debug = Debug('projectProcessor');

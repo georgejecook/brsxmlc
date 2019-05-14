@@ -12,7 +12,7 @@ export class BindingProperties {
   private _transformFunction: string;
   private _bindingType: BindingType;
 
-  get bindingType(): BindingType{
+  get bindingType(): BindingType {
     return this._bindingType;
   }
   get transformFunction(): string {

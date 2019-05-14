@@ -1,13 +1,9 @@
 'use strict';
-import * as _ from 'lodash';
-import * as path from 'path';
+import { XmlFile } from 'brightscript-language';
 
 import File from './File';
-
-import { FileType } from './FileType';
-
-import { XmlFile } from 'brightscript-language';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
+import { FileType } from './FileType';
 import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
