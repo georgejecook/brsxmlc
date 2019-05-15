@@ -1,4 +1,4 @@
-import { Program } from 'brightscript-language';
+import { Program, XmlFile } from 'brightscript-language';
 import { util } from 'brightscript-language';
 import { BrsConfig } from 'brightscript-language/dist/BrsConfig';
 import * as Debug from 'debug';
@@ -79,15 +79,14 @@ export class ProjectProcessor {
     return this._fileMap;
   }
 
-  public processFiles() {
+  public async processFiles() {
     debug(`Running processor with config ${inspect(this.config)} `);
     this.clearFiles();
     this.copyFiles();
-    this.createFiles();
+    await this.createFiles();
     //TODO - process bindings
     // - which will automatically add binding imports
-    //this.processImports();
-
+    await this.processImports();
   }
 
   public async processImports() {
@@ -147,6 +146,16 @@ export class ProjectProcessor {
         }
       }
     }
+
+    //Set parents
+    this.fileMap.getAllFiles().filter((file) => file.fileType === FileType.Xml
+      || file.fileType === FileType.ViewXml)
+      .forEach((file) => {
+        const parent = (file.programFile as XmlFile).parent;
+        if (parent) {
+          file.parentFile = this.fileMap.getFile(parent.pathAbsolute);
+        }
+      });
     debug(`finished creating file files`);
   }
 

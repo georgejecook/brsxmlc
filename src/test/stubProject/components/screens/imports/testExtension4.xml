@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component
-        name="test2Imports"
-        extends="Group"
+        name="testExtension4"
+        extends="testExtension3"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd"
->
+>∫
     <interface>
         <!-- public fields/functions -->
         <field
@@ -12,10 +12,6 @@
                 type="string"
                 alias="text.text"/>
     </interface>
-
-    <script
-            type="text/brightscript"
-            uri="pkg:/components/screens/imports/test2Imports.brs"/>
 
 
     <children>

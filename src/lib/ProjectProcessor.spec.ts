@@ -43,6 +43,18 @@ describe('Project Processor', function() {
     });
   });
 
+  describe('processFiles',  function() {
+    beforeEach(() => {
+      config = _.clone(config);
+      processor = new ProjectProcessor(config);
+      fs.removeSync(config.outputPath);
+    });
+
+    it('Processes whole project', async function() {
+      await processor.processFiles();
+    });
+  });
+
   describe('Copy files', function() {
     it('correctly copies files to target folder', () => {
       console.debug('copying files');
@@ -144,7 +156,7 @@ describe('Project Processor', function() {
     });
 
     it('correctly sets namespaces', () => {
-      expect([...processor.fileMap.allNamespaces.values()]).to.have.length(6);
+      expect([...processor.fileMap.allNamespaces.values()]).to.have.length(7);
       let file = processor.fileMap.getFileByNamespaceName('Utils');
       expect(file).to.not.be.null;
       expect(file.filename).to.equal('Utils.brs');
@@ -174,6 +186,11 @@ describe('Project Processor', function() {
       expect(file).to.not.be.null;
       expect(file.filename).to.equal('NetMixin.brs');
       expect(file.namespace.name).to.equal('NetMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('AuthMixin');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('AuthMixin.brs');
+      expect(file.namespace.name).to.equal('AuthMixin');
     });
   });
 

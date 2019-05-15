@@ -35,11 +35,18 @@ export default class ImportProcessor {
     if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
       throw new Error('was given a non-xml file');
     }
-    const importedNamespaces = this.getImportedNamespaces(file);
-    this.addImportCodeToFile(file, importedNamespaces);
+    if (!file.hasProcessedImports) {
+      if (file.parentFile && !file.parentFile.hasProcessedImports) {
+        //we must process and update the parent first, otherwise we can't filter the imports
+        this.addImportsToXmlFile(file.parentFile);
+      }
+      this.identifyImports(file);
+      this.addImportCodeToFile(file);
+      file.hasProcessedImports = true;
+    }
   }
 
-  public getImportedNamespaces(file: File): Namespace[] {
+  public identifyImports(file: File) {
     if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
       throw new Error('was given a non-xml file');
     }
@@ -70,18 +77,25 @@ export default class ImportProcessor {
       rootNamespaceNames.add('BaseObservable');
     }
 
-    //5 get all nested depende
+    //5 get all nested dependencies
     const allNamespaceNames = new Set();
     for (const namespaceName of rootNamespaceNames) {
       this.addNestedNamespaces(file, namespaceName, allNamespaceNames);
     }
 
     //turn all names into namespaces
-    const namespaces = [];
+    const requiredNamespaces = [];
+    const importedNamespaces = [];
+    const parentNamespaces = file.getAllParentNamespaces();
     for (const namespaceName of allNamespaceNames) {
-      namespaces.push(this.fileMap.getNamespaceByName(namespaceName));
+      const ns = this.fileMap.getNamespaceByName(namespaceName);
+      requiredNamespaces.push(ns);
+      if (!parentNamespaces.includes(ns)) {
+        importedNamespaces.push(ns);
+      }
     }
-    return namespaces;
+    file.importedNamespaces = importedNamespaces;
+    file.requiredNamespaces = requiredNamespaces;
   }
 
   private addNestedNamespaces(parentFile: File, parentNamespaceName: string, namespaceNames: Set<string>, parentSet: Set<string> = null) {
@@ -128,11 +142,11 @@ export default class ImportProcessor {
   /**
    * Responsible for updating the codebehind and xml files with the required imports
    */
-  public addImportCodeToFile(file: File, namespaces: Namespace[]) {
+  public addImportCodeToFile(file: File) {
     //for viewxml/codebehind files, we add the imports to xml - for pure brs files that's a moot point
-    if (file.fileType === FileType.CodeBehind && file.associatedFile) {
-      this.addImportIncludesToXML(file, namespaces);
-      this.addMixinInitializersToBRSInit(file, namespaces);
+    if (file.fileType === FileType.Xml || file.fileType === FileType.ViewXml) {
+      this.addImportIncludesToXML(file);
+      this.addMixinInitializersToBRSInit(file);
     }
   }
 
@@ -141,7 +155,7 @@ export default class ImportProcessor {
    * to allow us to replace ONE LINE of code, and then put the actual mixin init methods in a method at the end of the file
    * this prevents us from screwing up the line numbering in the event of an error.
    */
-  private addMixinInitializersToBRSInit(file: File, namespaces: Namespace[]) {
+  private addMixinInitializersToBRSInit(file: File) {
     //TODO - note
     //1. Check that brs file has Mixin placeholder call '@Mixin'
     //if not - error
@@ -150,7 +164,7 @@ export default class ImportProcessor {
     //for each import, if it's a mixin, add a call to it there
   }
 
-  private addImportIncludesToXML(file: File, namespaces: Namespace[]) {
+  private addImportIncludesToXML(file: File) {
 
     if (file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
       this.feedback.push(new FileFeedback(file, FileFeedbackType.Error, `Was passed a xml file`));
@@ -159,24 +173,33 @@ export default class ImportProcessor {
 
     let imports = ``;
     let cwd = process.cwd();
-    namespaces.forEach( (namespace) => {
-      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, namespace.file.pkgPath)}`;
+    file.importedNamespaces.forEach( (namespace) => {
+      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, namespace.file.pkgUri)}`;
     });
 
-    //we place imports at the end of the file to ensure we don't screw up error line number reporting
+    //if the codebehind is not imported yet, import it
+    const xmlFile = file.programFile as XmlFile;
+    if (file.associatedFile) {
+      const codeBehindPkgPath = file.associatedFile.pkgPath.toLowerCase();
+      const ownScripts = xmlFile.getOwnScriptImports();
+      if (!ownScripts.find((i) => i.pkgPath.toLowerCase() === codeBehindPkgPath)) {
+        imports += `\n${this.settings.importTemplate.replace(`$PATH$`, file.associatedFile.pkgUri)}`;
+      }
+    }
 
-    let xmlContents = file.associatedFile.getFileContents();
+    //we place imports at the end of the file to ensure we don't screw up error line number reporting
+    let xmlContents = file.getFileContents();
     this.settings.endOfXmlFileRegex.lastIndex = 0;
     let result = this.settings.endOfXmlFileRegex.exec(xmlContents);
     if (result) {
       const insertionIndex = result.index; //TODO - get the end tag location, and put it on the line before
       xmlContents = spliceString(xmlContents, insertionIndex, 0, imports);
-      file.associatedFile.setFileContents(xmlContents);
-      file.associatedFile.saveFileContents();
+      file.setFileContents(xmlContents);
+      file.saveFileContents();
       let xmlFile = file.programFile as XmlFile;
       //TODO update xmlFile - re-add/ reprocess? or simply add it to the imports
     } else {
-      this.feedback.push(new FileFeedback(file.associatedFile, FileFeedbackType.Error, `xml file did not have end component tag`));
+      this.feedback.push(new FileFeedback(file, FileFeedbackType.Error, `xml file did not have end component tag`));
       throw new Error(`xml file did not have end component tag`);
     }
   }

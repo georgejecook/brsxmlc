@@ -18,26 +18,32 @@ export default class File {
     this._fsPath = fsPath;
     this._fullPath = path.join(fsPath, filename);
     this._pkgPath = path.join(projectPath, filename);
-    this._pkgUri = `pkg://${path.join(projectPath, filename)}`;
+    this._pkgUri = `pkg:/${path.join(projectPath, filename)}`;
     this.projectPath = projectPath;
     this.extension = extension;
     this._importedNamespaceNames = new Set();
+    this.importedNamespaces = [];
+    this.requiredNamespaces = [];
     this._bindings = [];
     this.associatedFile = null;
     this.parentFile = null;
     this._fileContents = null;
+    this.hasProcessedImports = false;
   }
 
-  public filename: string;
   private _fsPath: string;
   private _pkgPath: string;
   private _pkgUri: string;
   private _fullPath: string;
+  public hasProcessedImports: boolean;
+  public filename: string;
   public projectPath: string;
   public extension: string;
   public associatedFile?: File;
   public parentFile?: File;
   public programFile: XmlFile | BrsFile;
+  public importedNamespaces: Namespace[];
+  public requiredNamespaces: Namespace[];
 
   private readonly _importedNamespaceNames: Set<string>;
   private readonly _bindings: Binding[];
@@ -71,7 +77,6 @@ export default class File {
   public get importedNamespaceNames(): Set<string> {
     return this._importedNamespaceNames;
   }
-
   public get fullPath() {
     return this._fullPath;
   }
@@ -109,6 +114,19 @@ export default class File {
 
   public unloadContents() {
     this._fileContents = null;
+  }
+
+  public getAllParentNamespaces(nameSpaces: Namespace[] = null): Namespace[] {
+    if (!nameSpaces) {
+      nameSpaces = [];
+    } else {
+      nameSpaces = nameSpaces.concat(this.importedNamespaces);
+    }
+    if (this.parentFile) {
+      return this.parentFile.getAllParentNamespaces(nameSpaces);
+    } else {
+      return nameSpaces;
+    }
   }
 
   public toString(): string {

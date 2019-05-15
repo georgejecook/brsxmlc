@@ -7,6 +7,7 @@ import File from './File';
 import ImportProcessor from './ImportProcessor';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
+import { getRegexMatchesValues } from './Utils';
 
 const chaiSubset = require('chai-subset');
 chai.use(chaiSubset);
@@ -52,19 +53,18 @@ describe('Include importProcessor', function() {
 
     it('identifies 1 import', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test.xml');
-      const namespaces = importProcessor.getImportedNamespaces(file);
-      expect(namespaces).to.have.lengthOf(1);
-      expect(namespaces).containSubset([{ _name: 'FocusMixin' }]);
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(1);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
       expect(processor.errors).to.be.empty;
     });
 
     it('identifies 2 imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test2Imports.xml');
-      const namespaces = importProcessor.getImportedNamespaces(file);
-      expect(namespaces).to.have.lengthOf(2);
-      expect(namespaces).containSubset([
-        { _name: 'FocusMixin' },
-        { _name: 'TextMixin' }]);
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(2);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
+        'FocusMixin', 'TextMixin']);
       expect(processor.errors).to.be.empty;
     });
 
@@ -82,18 +82,16 @@ describe('Include importProcessor', function() {
       await processor.createFiles();
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testMissingImport.xml');
-      expect(() => importProcessor.getImportedNamespaces(file)).to.throw(Error);
+      expect(() => importProcessor.identifyImports(file)).to.throw(Error);
       expect(processor.errors).to.not.be.empty;
     });
 
     it('identifies cascading imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCascadingImports.xml');
-      const namespaces = importProcessor.getImportedNamespaces(file);
-      expect(namespaces).to.have.lengthOf(3);
-      expect(namespaces).containSubset([
-        { _name: 'Utils' },
-        { _name: 'LogMixin' },
-        { _name: 'NetMixin' }]);
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(3);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
+        'Utils', 'LogMixin', 'NetMixin']);
       expect(processor.errors).to.be.empty;
     });
 
@@ -111,7 +109,7 @@ describe('Include importProcessor', function() {
       await processor.createFiles();
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testMissingImport.xml');
-      expect(() => importProcessor.getImportedNamespaces(file)).to.throw(Error);
+      expect(() => importProcessor.identifyImports(file)).to.throw(Error);
       expect(processor.errors).to.not.be.empty;
     });
 
@@ -129,13 +127,95 @@ describe('Include importProcessor', function() {
       await processor.createFiles();
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCyclicalImport.xml');
-      expect(() => importProcessor.getImportedNamespaces(file)).to.throw(Error);
+      expect(() => importProcessor.identifyImports(file)).to.throw(Error);
       expect(processor.errors).to.not.be.empty;
+    });
+
+    it('parent class includes imports', function() {
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension.xml');
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(1);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('include subclass imports', function() {
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension2.xml');
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(3);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
+        'Utils', 'LogMixin', 'NetMixin']);
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('include parent imports in second subclass', function() {
+      //make sure we process the parents in order, so they have their namespaces set
+
+      const fileRoot = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension.xml');
+      importProcessor.identifyImports(fileRoot);
+      const fileParent = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension2.xml');
+      importProcessor.identifyImports(fileParent);
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension3.xml');
+      importProcessor.identifyImports(file);
+      expect(file.requiredNamespaces).to.have.lengthOf(2);
+      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(
+        ['TextMixin', 'FocusMixin']);
+      expect(file.importedNamespaces).to.have.lengthOf(1);
+      expect(file.importedNamespaces.map( (ns) => ns.name)).to.have.all.members(
+        ['TextMixin']);
+
+      const topFile = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension4.xml');
+      importProcessor.identifyImports(topFile);
+      expect(topFile.requiredNamespaces).to.have.lengthOf(6);
+      expect(topFile.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(
+        ['TextMixin', 'FocusMixin', 'NetMixin', 'LogMixin', 'AuthMixin', 'Utils']);
+      expect(topFile.importedNamespaces.map( (ns) => ns.name)).to.have.all.members(
+        ['AuthMixin']);
+
+      expect(processor.errors).to.be.empty;
     });
   });
 
+  describe('addImportIncludesToXML', function() {
+    it('adds script tags for 1 import', function() {
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test.xml');
+      importProcessor.addImportsToXmlFile(file);
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('adds script tags for cascading imports', function() {
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCascadingImports.xml');
+      importProcessor.addImportsToXmlFile(file);
+      expect(processor.errors).to.be.empty;
+    });
+
+    it('adds script tags for extended imports', function() {
+      const fileRoot = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension.xml');
+      const fileParent = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension2.xml');
+      const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension3.xml');
+      const topFile = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension4.xml');
+
+      importProcessor.addImportsToXmlFile(topFile);
+      expect(processor.errors).to.be.empty;
+
+      const fileRootScriptTags = getXMLScriptImportNamesFromFile(fileRoot);
+      const fileParentScriptTags = getXMLScriptImportNamesFromFile(fileParent);
+      const fileScriptTags = getXMLScriptImportNamesFromFile(file);
+      const topFileScriptTags = getXMLScriptImportNamesFromFile(topFile);
+      expect(fileRootScriptTags).to.have.all.members(['FocusMixin.brs', 'testExtension.brs']);
+      expect(fileParentScriptTags).to.have.all.members(['Utils.brs', 'LogMixin.brs', 'NetMixin.brs', 'testExtension2.brs']);
+      expect(fileScriptTags).to.have.all.members(['TextMixin.brs', 'testExtension3.brs']);
+      expect(topFileScriptTags).to.have.all.members(['AuthMixin.brs', 'testExtension4.brs']);
+    });
+  });
 });
 
 function createFile(path, extension) {
   return new File(config.outputPath, path, `test${extension}`, '.extension');
+}
+
+function getXMLScriptImportNamesFromFile(file): string[] {
+  const regex = new RegExp('<.*?script.*uri=\\"(.*)\\".*\\/?>', 'gi');
+  return getRegexMatchesValues(file.getFileContents(), regex, 1)
+    .map( (t) => path.basename(t));
 }
