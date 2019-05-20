@@ -1,6 +1,8 @@
 'use strict';
 import { XmlFile } from 'brightscript-language';
 
+import { Error } from 'tslint/lib/error';
+import { feedbackError } from './Feedback';
 import File from './File';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
@@ -26,10 +28,6 @@ export default class ImportProcessor {
   private fileMap: ProjectFileMap;
   private projectProcessor: ProjectProcessor;
   private settings: ProcessorSettings;
-
-  private get feedback(): FileFeedback[] {
-    return this.projectProcessor.feedback;
-  }
 
   public addImportsToXmlFile(file: File) {
     if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
@@ -61,9 +59,7 @@ export default class ImportProcessor {
     for (const fileReference of xmlFile.getOwnScriptImports()) {
       const importedFile = this.fileMap.getFileByPkgPath(fileReference.pkgPath);
       if (!importedFile) {
-        const feedback = new FileFeedback(file, FileFeedbackType.Error, `xml file imports a file that cannot be found ${fileReference.pkgPath}`);
-        this.feedback.push(feedback);
-        feedback.throw();
+        feedbackError(file, `xml file imports a file that cannot be found ${fileReference.pkgPath}`, true);
       } else if (importedFile === file.associatedFile) {
         continue;
       }
@@ -126,17 +122,13 @@ export default class ImportProcessor {
   }
 
   public failWithMissingNamespace(file: File, namespaceName: string) {
-    const feedback = new FileFeedback(file, FileFeedbackType.Error, `Missing namespace - could not find a file that
-     declares the namespace ${namespaceName}`);
-    this.feedback.push(feedback);
-    feedback.throw();
+    feedbackError(file, `Missing namespace - could not find a file that
+     declares the namespace ${namespaceName}`, true);
   }
 
   public failWithCyclicalNamespace(file: File, sourceNamespaceName: string, namespaceName: string) {
-    const feedback = new FileFeedback(file, FileFeedbackType.Error, `Cyclical import detected - an infinite import cycle
-     was found on ${namespaceName} when processing import for ${sourceNamespaceName}`);
-    this.feedback.push(feedback);
-    feedback.throw();
+    feedbackError(file, `Cyclical import detected - an infinite import cycle
+     was found on ${namespaceName} when processing import for ${sourceNamespaceName}`, true);
   }
 
   /**
@@ -167,8 +159,7 @@ export default class ImportProcessor {
   private addImportIncludesToXML(file: File) {
 
     if (file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
-      this.feedback.push(new FileFeedback(file, FileFeedbackType.Error, `Was passed a xml file`));
-      throw new Error('was given a non-xml file');
+      feedbackError(file, `Was passed a non xml file`, true);
     }
 
     let imports = ``;
@@ -199,8 +190,7 @@ export default class ImportProcessor {
       let xmlFile = file.programFile as XmlFile;
       //TODO update xmlFile - re-add/ reprocess? or simply add it to the imports
     } else {
-      this.feedback.push(new FileFeedback(file, FileFeedbackType.Error, `xml file did not have end component tag`));
-      throw new Error(`xml file did not have end component tag`);
+      feedbackError(file, `xml file did not have end component tag`, true);
     }
   }
 

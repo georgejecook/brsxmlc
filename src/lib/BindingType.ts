@@ -1,5 +1,6 @@
 export enum BindingType {
-  oneWayObserver,
+  invalid,
+  oneWay,
+  oneWaySource,
   twoWay,
-  oneWayNode
 }

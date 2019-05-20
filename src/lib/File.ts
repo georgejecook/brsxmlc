@@ -4,7 +4,7 @@ import * as path from 'path';
 import { BrsFile } from 'brightscript-language';
 import { XmlFile } from 'brightscript-language';
 
-import Binding from './Bindings';
+import Binding from './Binding';
 import { FileType } from './FileType';
 import Namespace from './NameSpace';
 
@@ -24,6 +24,7 @@ export default class File {
     this._importedNamespaceNames = new Set();
     this.importedNamespaces = [];
     this.requiredNamespaces = [];
+    this.componentIds = new Set<string>();
     this._bindings = [];
     this.associatedFile = null;
     this.parentFile = null;
@@ -44,6 +45,7 @@ export default class File {
   public programFile: XmlFile | BrsFile;
   public importedNamespaces: Namespace[];
   public requiredNamespaces: Namespace[];
+  public componentIds: Set<string>;
 
   private readonly _importedNamespaceNames: Set<string>;
   private readonly _bindings: Binding[];
@@ -62,7 +64,7 @@ export default class File {
     }
   }
 
-  public get bindings() {
+  public get bindings(): Binding[] {
     return this._bindings;
   }
 

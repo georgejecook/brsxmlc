@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component
+        name="BindingTest"
+        extends="Group"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd"
+>
+    <interface>
+        <!-- public fields/functions -->
+        <field
+                id="target"
+                type="string"
+                alias="text.text"/>
+    </interface>
+
+    <script
+            type="text/brightscript"
+            uri="pkg:/components/screens/imports/test.brs"/>
+
+
+    <children>
+        <!--One way binding from vm field-->
+        <Label
+            id="titleLabel"
+            text="@{vm.titleText}" />
+
+        <!--One way to vm function -->
+        <Button
+            id="button"
+            text="click me"
+            clicked="@{vm.onClick()}" />
+
+        <!--Two Way binding -->
+        <InputBox
+            id="nameInput"
+            text="@{vm.name, mode=TwoWay}" />
+
+        <!--Transform function -->
+        <InputBox
+            id="nameInputTwoWay"
+            text="@{vm.name}" />
+        <Group>
+            <Group id="innerGroup"
+            visible="@{vm.isGroupVisible, transform=OM_transform_invertBoolean}">
+
+            <!-- One Way from node field to observer field -->
+            <RowList
+                id="rowList"
+                focusedIndex="@{vm.focusedIndex, mode=oneWaySource}" />
+
+                <!--Multiple bindings -->
+            <RowList
+                id="rowList"
+                visible="@{vm.isGroupVisible, transform=OM_transform_invertBoolean}"
+                clicked="@{vm.onItemClicked}"
+                jumpToIndex="@{vm.jumpToIndex, mode=oneWay}"
+                focusedIndex="@{vm.focusedIndex, mode=oneWaySource}"
+                selectedIndex="@{vm.selectedIndex, mode=twoWay, isSettingInitialValue=false}" />
+            </Group>
+        </Group>
+
+    </children>
+
+</component>

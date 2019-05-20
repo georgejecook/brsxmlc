@@ -8,5 +8,6 @@
 		"!**/testCyclical*.*"
 	],
 	"sourcePath": "src/test/stubProject",
-	"outputPath": "build"
+	"outputPath": "build",
+	"logLevel": 4
 }

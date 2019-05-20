@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 
 import { expect } from 'chai';
 
+import { getFeedbackErrors, getFeedbackWarnings, resetFeedback } from './Feedback';
 import File from './File';
 import { FileType } from './FileType';
 import Namespace from './NameSpace';
@@ -20,6 +21,7 @@ let processor: ProjectProcessor;
 
 describe('Project Processor', function() {
   beforeEach(() => {
+    resetFeedback();
     config = _.clone(config);
     processor = new ProjectProcessor(config);
     fs.removeSync(config.outputPath);
@@ -89,9 +91,9 @@ describe('Project Processor', function() {
       //TODO test warnings and errors!
       console.debug('finished processing map');
       console.debug('warnings');
-      console.debug(processor.warnings);
+      console.debug(getFeedbackWarnings());
       console.debug('errors');
-      console.debug(processor.errors);
+      console.debug(getFeedbackErrors());
       processor.fileMap.allFiles.forEach((v: File) => console.debug(v.toString()));
     });
 
@@ -156,7 +158,7 @@ describe('Project Processor', function() {
     });
 
     it('correctly sets namespaces', () => {
-      expect([...processor.fileMap.allNamespaces.values()]).to.have.length(7);
+      expect([...processor.fileMap.allNamespaces.values()]).to.have.length(8);
       let file = processor.fileMap.getFileByNamespaceName('Utils');
       expect(file).to.not.be.null;
       expect(file.filename).to.equal('Utils.brs');
@@ -191,6 +193,11 @@ describe('Project Processor', function() {
       expect(file).to.not.be.null;
       expect(file.filename).to.equal('AuthMixin.brs');
       expect(file.namespace.name).to.equal('AuthMixin');
+
+      file = processor.fileMap.getFileByNamespaceName('BindingTestVM');
+      expect(file).to.not.be.null;
+      expect(file.filename).to.equal('BindingTestVM.brs');
+      expect(file.namespace.name).to.equal('BindingTestVM');
     });
   });
 
@@ -222,7 +229,7 @@ describe('Project Processor', function() {
       `);
       const ns = processor.getNamespaceFromFile(file);
       expect(ns).to.be.null;
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('namespace short and long name', async () => {
@@ -237,7 +244,7 @@ describe('Project Processor', function() {
       expect(ns.file).to.equal(file);
       expect(ns.shortName).to.equal('MNS');
       expect(ns.name).to.equal('MyNamespace');
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('namespace long name', async () => {
@@ -252,7 +259,7 @@ describe('Project Processor', function() {
       expect(ns.file).to.equal(file);
       expect(ns.shortName).to.equal('MyNamespace');
       expect(ns.name).to.equal('MyNamespace');
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('duplicate', async () => {
@@ -265,9 +272,9 @@ describe('Project Processor', function() {
       const file2 = new File('', 'source', 'file2.brs', '.brs');
       const ns = new Namespace('MyNamespace', file2);
       processor.fileMap.allNamespaces.set('MyNamespace'.toLowerCase(), ns);
-      expect(() => processor.getNamespaceFromFile(file)).to.throw(`Could not register namespace MyNamespace,
-        for file file.brs. It is already registered for file file2.brs`);
-      expect(processor.errors).to.not.be.empty;
+      expect(() => processor.getNamespaceFromFile(file)).to.throw(`Error - file.brs(-:-) Could not register namespace MyNamespace,
+                for file file.brs. It is already registered for file file2.brs`);
+      expect(getFeedbackErrors()).to.not.be.empty;
     });
   });
 });

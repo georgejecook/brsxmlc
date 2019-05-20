@@ -9,7 +9,6 @@
 		"brsconfig.schema.json"
 	],
 	"dependencies": {
-		"brightscript-language": "file:../opensource/brightscript-language",
 		"commander": "latest",
 		"debug": "latest",
 		"dir-compare": "^1.4.0",
@@ -33,12 +32,14 @@
 		"babel-cli": "^6.26.0",
 		"babel-core": "^6.26.3",
 		"babel-preset-env": "^1.6.1",
+		"brightscript-language": "^0.2.8",
 		"chai": "^4.1.2",
 		"chai-subset": "^1.6.0",
 		"codecov": "^3.1.0",
 		"compare-directories": "^0.1.0",
 		"mocha": "^5.1.1",
 		"nyc": "^13.1.0",
+		"sax": "^1.2.4",
 		"ts-node": "^7.0.1",
 		"tslint": "^5.11.0",
 		"tslint-eslint-rules": "^5.4.0",

@@ -3,6 +3,8 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as path from 'path';
 
+import { getFeedbackErrors } from './Feedback';
+import { resetFeedback } from './Feedback';
 import File from './File';
 import ImportProcessor from './ImportProcessor';
 import ProjectFileMap from './ProjectFileMap';
@@ -21,6 +23,7 @@ let importProcessor: ImportProcessor;
 
 describe('Include importProcessor', function() {
   beforeEach( async () => {
+    resetFeedback();
     fileMap = new ProjectFileMap();
     config = _.clone(config);
     processor = new ProjectProcessor(config, fileMap);
@@ -56,7 +59,7 @@ describe('Include importProcessor', function() {
       importProcessor.identifyImports(file);
       expect(file.requiredNamespaces).to.have.lengthOf(1);
       expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('identifies 2 imports', function() {
@@ -65,7 +68,7 @@ describe('Include importProcessor', function() {
       expect(file.requiredNamespaces).to.have.lengthOf(2);
       expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
         'FocusMixin', 'TextMixin']);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('fails on missing import', async () => {
@@ -83,7 +86,7 @@ describe('Include importProcessor', function() {
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testMissingImport.xml');
       expect(() => importProcessor.identifyImports(file)).to.throw(Error);
-      expect(processor.errors).to.not.be.empty;
+      expect(getFeedbackErrors()).to.not.be.empty;
     });
 
     it('identifies cascading imports', function() {
@@ -92,7 +95,7 @@ describe('Include importProcessor', function() {
       expect(file.requiredNamespaces).to.have.lengthOf(3);
       expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
         'Utils', 'LogMixin', 'NetMixin']);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('fails on cascading missing import', async () => {
@@ -110,7 +113,7 @@ describe('Include importProcessor', function() {
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testMissingImport.xml');
       expect(() => importProcessor.identifyImports(file)).to.throw(Error);
-      expect(processor.errors).to.not.be.empty;
+      expect(getFeedbackErrors()).to.not.be.empty;
     });
 
     it('fails on cyclical import', async () => {
@@ -128,7 +131,7 @@ describe('Include importProcessor', function() {
       importProcessor = new ImportProcessor(processor);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCyclicalImport.xml');
       expect(() => importProcessor.identifyImports(file)).to.throw(Error);
-      expect(processor.errors).to.not.be.empty;
+      expect(getFeedbackErrors()).to.not.be.empty;
     });
 
     it('parent class includes imports', function() {
@@ -136,7 +139,7 @@ describe('Include importProcessor', function() {
       importProcessor.identifyImports(file);
       expect(file.requiredNamespaces).to.have.lengthOf(1);
       expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('include subclass imports', function() {
@@ -145,7 +148,7 @@ describe('Include importProcessor', function() {
       expect(file.requiredNamespaces).to.have.lengthOf(3);
       expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
         'Utils', 'LogMixin', 'NetMixin']);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('include parent imports in second subclass', function() {
@@ -172,7 +175,7 @@ describe('Include importProcessor', function() {
       expect(topFile.importedNamespaces.map( (ns) => ns.name)).to.have.all.members(
         ['AuthMixin']);
 
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
   });
 
@@ -180,13 +183,13 @@ describe('Include importProcessor', function() {
     it('adds script tags for 1 import', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test.xml');
       importProcessor.addImportsToXmlFile(file);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('adds script tags for cascading imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCascadingImports.xml');
       importProcessor.addImportsToXmlFile(file);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('adds script tags for extended imports', function() {
@@ -196,7 +199,7 @@ describe('Include importProcessor', function() {
       const topFile = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension4.xml');
 
       importProcessor.addImportsToXmlFile(topFile);
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
 
       const fileRootScriptTags = getXMLScriptImportNamesFromFile(fileRoot);
       const fileParentScriptTags = getXMLScriptImportNamesFromFile(fileParent);

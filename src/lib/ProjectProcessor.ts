@@ -7,6 +7,7 @@ import * as path from 'path';
 import { inspect } from 'util';
 
 import { changeExtension } from './changeExtension';
+import { feedbackError, feedbackWarning } from './Feedback';
 import File from './File';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
@@ -22,6 +23,7 @@ const debug = Debug('projectProcessor');
 export class ProjectProcessor {
   constructor(config: ProcessorConfig, fileMap?: ProjectFileMap) {
     this._config = config;
+    debug('Running project processor');
     this._builderConfig = {
       cwd: this.config.sourcePath,
       files: this.config.filePattern,
@@ -35,7 +37,6 @@ export class ProjectProcessor {
     }
     this._targetPath = path.resolve(this._config.outputPath);
     this._fileMap = fileMap || new ProjectFileMap();
-    this._feedback = [];
     this._settings = new ProcessorSettings();
   }
 
@@ -43,28 +44,11 @@ export class ProjectProcessor {
   private readonly _config: ProcessorConfig;
   private readonly _fileMap: ProjectFileMap;
   private readonly _settings: ProcessorSettings;
-  private readonly _feedback: FileFeedback[];
   private readonly _targetPath: string;
   private _program: Program;
 
-  get feedback(): FileFeedback[] {
-    return this._feedback;
-  }
-
   get targetPath(): string {
     return this._targetPath;
-  }
-
-  get errors(): FileFeedback[] {
-    return this._feedback.filter((feedback) => feedback.feedbackType === FileFeedbackType.Error);
-  }
-
-  get warnings(): FileFeedback[] {
-    return this._feedback.filter((feedback) => feedback.feedbackType === FileFeedbackType.Warning);
-  }
-
-  get infos(): FileFeedback[] {
-    return this._feedback.filter((feedback) => feedback.feedbackType === FileFeedbackType.Info);
   }
 
   get config(): ProcessorConfig {
@@ -135,7 +119,7 @@ export class ProjectProcessor {
         const filename = path.basename(file);
         let existingFile = this.fileMap.getFile[file];
         if (existingFile) {
-          this.feedback.push(new FileFeedback(existingFile, FileFeedbackType.Warning, `file ${directory}/${file} already has file, skipping`));
+          feedbackWarning(null, `file ${directory}/${file} already has file, skipping`);
         } else {
           try {
             await this.createFile(fullPath, projectPath, filename, extension);
@@ -217,10 +201,7 @@ export class ProjectProcessor {
       while (matches = this.settings.namespaceRegex.exec(file.getFileContents())) {
         namespaceCount++;
         if (namespaceCount > 1) {
-          const feedback = new FileFeedback(file, FileFeedbackType.Error, `More than one namespace defined
-        for file ${file.fullPath}`);
-          this.feedback.push(feedback);
-          feedback.throw();
+          feedbackError(file, `More than one namespace defined for file ${file.fullPath}`, true);
         } else if (matches.length > 3) {
           const shortName = matches[2];
           const name = matches[3];
@@ -231,10 +212,8 @@ export class ProjectProcessor {
       if (namespace) {
         const existingNamespace = this.fileMap.getNamespaceByName(namespace.name);
         if (existingNamespace) {
-          const feedback = new FileFeedback(file, FileFeedbackType.Error, `Could not register namespace ${namespace.name},
-        for file ${file.fullPath}. It is already registered for file ${existingNamespace.file.fullPath}`);
-          this.feedback.push(feedback);
-          feedback.throw();
+          feedbackError(file, `Could not register namespace ${namespace.name},
+                for file ${file.fullPath}. It is already registered for file ${existingNamespace.file.fullPath}`, true);
         }
       }
     }

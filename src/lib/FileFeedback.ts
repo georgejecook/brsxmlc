@@ -23,6 +23,6 @@ export class FileFeedback {
   }
 
   public throw() {
-    throw new Error(this.message);
+    throw new Error(this.toString());
   }
 }
