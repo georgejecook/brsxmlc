@@ -1,7 +1,7 @@
-'@Import TextMixin
-'@Import FocusMixin
-'@Import NetMixin
-'@Import AuthMixin
+'@Import "pkg:/source/mixins/TextMixin.brs"
+'@Import "pkg:/source/mixins/FocusMixin.brs"
+'@Import "pkg:/source/mixins/NetMixin.brs"
+'@Import "pkg:/source/mixins/AuthMixin.brs"
 
 function Init() as void
     m.log.I("Init")

@@ -6,7 +6,7 @@ import * as path from 'path';
 import Binding from './Binding';
 import { BindingProcessor } from './BindingProcessor';
 import { BindingType } from './BindingType';
-import { resetFeedback } from './Feedback';
+import { getFeedbackErrors, resetFeedback } from './Feedback';
 import File from './File';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
@@ -62,7 +62,7 @@ describe('BindingProcessor', function() {
       expect(binding.properties.type).to.equal(BindingType.oneWay);
       expect(binding.properties.transformFunction).to.equal('');
       expect(binding.properties.isSettingInitialValue).to.be.true;
-      expect(processor.errors).to.be.empty;
+      expect(getFeedbackErrors()).to.be.empty;
     });
   });
 });

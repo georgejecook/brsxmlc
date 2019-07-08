@@ -1,5 +1,5 @@
-'@Import FocusMixin
-'@Import TextMixin
+'@Import "pkg:/source/mixins/FocusMixin.brs"
+'@Import "pkg:/source/mixins/TextMixin.brs"
 
 
 

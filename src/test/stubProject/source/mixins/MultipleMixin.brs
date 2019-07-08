@@ -1,5 +1,5 @@
 '@Namespace MM MultipleMixin
-'@Import TextMixin
+'@Import "pkg:/source/mixins/TextMixin.brs"
 '@Import BaseMixin
 
 

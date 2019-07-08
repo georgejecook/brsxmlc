@@ -1,5 +1,4 @@
-'@Namespace CyclicalImport
-'@Import "testCyclicalImport2.brs"
+'@Import "../../../source/mixins/FocusMixin.brs"
 
 function Init() as void
     m.log.I("Init")

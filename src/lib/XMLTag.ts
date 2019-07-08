@@ -1,9 +1,7 @@
 import Binding from './Binding';
-import { BindingProperties } from './BindingProperties';
 import { BindingType } from './BindingType';
 import { feedbackError, feedbackWarning } from './Feedback';
 import File from './File';
-import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { getRegexMatchValue, pad } from './Utils';
 
 let bindingTypeTextMap = {

@@ -1,5 +1,8 @@
+// @ts-ignore
 import { Program, XmlFile } from 'brightscript-language';
+// @ts-ignore
 import { util } from 'brightscript-language';
+// @ts-ignore
 import { BrsConfig } from 'brightscript-language/dist/BrsConfig';
 import * as Debug from 'debug';
 import * as fs from 'fs-extra';
@@ -153,7 +156,6 @@ export class ProjectProcessor {
 
     const file = new File(fullPath, projectPath, filename, extension);
 
-    await this._program.addOrReplaceFile(file.fullPath.toLowerCase());
     if (!associatedFile) {
       const associatedFile = await this.getAssociatedFile(file, fullPath, projectPath, filename, extension);
       file.associatedFile = associatedFile;
@@ -166,8 +168,8 @@ export class ProjectProcessor {
     file.programFile = await this._program.addOrReplaceFile(file.fullPath.toLowerCase(), file.getFileContents());
     if (file.fileType === FileType.Brs || file.fileType === FileType.CodeBehind) {
       file.namespace = this.getNamespaceFromFile(file);
-      addSetItems(file.importedNamespaceNames,
-        getRegexMatchesValues(file.getFileContents(), this.settings.importRegex, 2));
+      addSetItems(file.importedPaths,
+        this.getNormalizedImports(file, getRegexMatchesValues(file.getFileContents(), this.settings.importRegex, 1)));
     }
     this.fileMap.addFile(file);
     return file;
@@ -218,5 +220,63 @@ export class ProjectProcessor {
       }
     }
     return namespace;
+  }
+
+  private getNormalizedImports(file: File, paths: string[]): string[] {
+    let importPaths = [];
+    let filePath = file.pkgPath.toLowerCase();
+    paths.forEach( (path) => {
+      path = path.toLowerCase();
+      let normalizedPath = this.getPkgPathFromTarget(filePath, path);
+      if (normalizedPath) {
+        importPaths.push(normalizedPath);
+      }
+    });
+    return importPaths;
+  }
+
+  /**
+   * Given an absollute path to a source file, and a target path,
+   * compute the pkg path for the target relative to the source file's location
+   * @param containingFilePathAbsolute
+   * @param targetPath
+   *
+   * Note - lifted straight from Bronley Plumb's brightscript-language utisl : thanks Bron :)
+   */
+  public getPkgPathFromTarget(containingFilePathAbsolute: string, targetPath: string): string | null {
+    //if the target starts with 'pkg:', it's an absolute path. Return as is
+    if (targetPath.indexOf('pkg:/') === 0) {
+      targetPath = targetPath.substring(5);
+      if (targetPath === '') {
+        return null;
+      } else {
+        return path.normalize(targetPath);
+      }
+    }
+    if (targetPath === 'pkg:') {
+      return null;
+    }
+
+    //remove the filename
+    let containingFolder = path.normalize(path.dirname(containingFilePathAbsolute));
+    //start with the containing folder, split by slash
+    let result = containingFolder.split(path.sep);
+
+    //split on slash
+    let targetParts = path.normalize(targetPath).split(path.sep);
+
+    for (let part of targetParts) {
+      if (part === '' || part === '.') {
+        //do nothing, it means current directory
+        continue;
+      }
+      if (part === '..') {
+        //go up one directory
+        result.pop();
+      } else {
+        result.push(part);
+      }
+    }
+    return result.join(path.sep);
   }
 }

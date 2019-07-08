@@ -1,12 +1,11 @@
 'use strict';
+// @ts-ignore
 import { XmlFile } from 'brightscript-language';
 
-import { Error } from 'tslint/lib/error';
 import { feedbackError } from './Feedback';
 import File from './File';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
-import Namespace from './NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
 import ProjectFileMap from './ProjectFileMap';
@@ -48,13 +47,13 @@ export default class ImportProcessor {
     if (!file || file.fileType !== FileType.Xml && file.fileType !== FileType.ViewXml) {
       throw new Error('was given a non-xml file');
     }
-    const rootNamespaceNames = new Set();
-    //1 add codebehind namespace names
+    const rootImportPaths = new Set();
+    //1 add codebehind imports
     if (file.associatedFile) {
-      addSetItems(rootNamespaceNames, file.associatedFile.importedNamespaceNames);
+      addSetItems(rootImportPaths, file.associatedFile.importedPaths);
     }
 
-    //2 add namespace names from all imported scripts
+    //2 add imported paths from all XML imported scripts
     const xmlFile = file.programFile as XmlFile;
     for (const fileReference of xmlFile.getOwnScriptImports()) {
       const importedFile = this.fileMap.getFileByPkgPath(fileReference.pkgPath);
@@ -63,72 +62,73 @@ export default class ImportProcessor {
       } else if (importedFile === file.associatedFile) {
         continue;
       }
-      addSetItems(rootNamespaceNames, importedFile.importedNamespaceNames);
+      addSetItems(rootImportPaths, importedFile.importedPaths);
     }
 
     //3 identify if the file is using bindings
     if (file.bindings.length > 0) {
-      //TODO
-      rootNamespaceNames.add('ObservableMixin');
-      rootNamespaceNames.add('BaseObservable');
+      //TODO - need to ensure the location matches the project spec
+      rootImportPaths.add('pkg:/source/maestro/binding/ObservableMixin.brs');
+      rootImportPaths.add('pkg:/source/maestro/binding/BaseObservable.brs');
     }
+
+    //TODO 4 include codebehind file, if not already included
 
     //5 get all nested dependencies
-    const allNamespaceNames = new Set();
-    for (const namespaceName of rootNamespaceNames) {
-      this.addNestedNamespaces(file, namespaceName, allNamespaceNames);
+    const allImportedPaths = new Set();
+    for (const importPath of rootImportPaths) {
+      this.addNestedImportPaths(file, importPath, allImportedPaths);
     }
 
-    //turn all names into namespaces
-    const requiredNamespaces = [];
-    const importedNamespaces = [];
-    const parentNamespaces = file.getAllParentNamespaces();
-    for (const namespaceName of allNamespaceNames) {
-      const ns = this.fileMap.getNamespaceByName(namespaceName);
-      requiredNamespaces.push(ns);
-      if (!parentNamespaces.includes(ns)) {
-        importedNamespaces.push(ns);
+    //turn all imports into files
+    const requiredFiles = [];
+    const importedFiles = [];
+    const parentImportPaths = file.getAllParentImportPaths();
+    for (const path of allImportedPaths) {
+      const importedFile = this.fileMap.getFileByPkgPath(path);
+      requiredFiles.push(importedFile);
+      if (!parentImportPaths.includes(path)) {
+        importedFiles.push(importedFile);
       }
     }
-    file.importedNamespaces = importedNamespaces;
-    file.requiredNamespaces = requiredNamespaces;
+    file.importedFiles = importedFiles;
+    file.requiredFiles = requiredFiles;
   }
 
-  private addNestedNamespaces(parentFile: File, parentNamespaceName: string, namespaceNames: Set<string>, parentSet: Set<string> = null) {
-    let parentNamespace = this.fileMap.getNamespaceByName(parentNamespaceName);
-    if (!parentNamespace) {
-      this.failWithMissingNamespace(parentFile, parentNamespaceName);
+  private addNestedImportPaths(sourceFile: File, parentPkgPath: string, importPaths: Set<string>, parentSet: Set<string> = null) {
+    let parentFile = this.fileMap.getFileByPkgPath(parentPkgPath);
+    if (!parentFile) {
+      this.failWithMissingImport(sourceFile, parentPkgPath);
     }
     if (!parentSet) {
-      parentSet = new Set([parentNamespaceName]);
+      parentSet = new Set([parentPkgPath]);
     }
-    let file = parentNamespace.file;
-    for (const namespaceName of file.importedNamespaceNames) {
-      if (!namespaceNames.has(namespaceName)) {
-        let namespace = this.fileMap.getNamespaceByName(namespaceName);
-        if (!namespace) {
-          this.failWithMissingNamespace(file, namespaceName);
+    let file = parentFile;
+    for (const importPath of file.importedPaths) {
+      if (!importPaths.has(importPath)) {
+        let importFile = this.fileMap.getFileByPkgPath(importPath);
+        if (!importFile) {
+          this.failWithMissingImport(file, importPath);
         }
-        if (parentSet.has(namespaceName)) {
-          this.failWithCyclicalNamespace(file, parentNamespaceName, namespaceName);
+        if (parentSet.has(importPath)) {
+          this.failWithCyclicalImport(file, parentPkgPath, importPath);
         }
-        const namespaceStack = new Set(parentSet);
-        namespaceStack.add(namespaceName);
-        this.addNestedNamespaces(file, namespaceName, namespaceNames, namespaceStack);
-        namespaceNames.add(namespaceName);
+        const importStack = new Set(parentSet);
+        importStack.add(importPath);
+        this.addNestedImportPaths(file, importPath, importPaths, importStack);
+        importPaths.add(importPath);
       }
     }
-    namespaceNames.add(parentNamespaceName);
+    importPaths.add(parentPkgPath);
   }
 
-  public failWithMissingNamespace(file: File, namespaceName: string) {
-    feedbackError(file, `Missing namespace - could not find a file that
-     declares the namespace ${namespaceName}`, true);
+  public failWithMissingImport(file: File, path: string) {
+    feedbackError(file, `Missing import - could not find a file at path ${path}`, true);
   }
 
-  public failWithCyclicalNamespace(file: File, sourceNamespaceName: string, namespaceName: string) {
+  public failWithCyclicalImport(file: File, sourceImportPath: string, path: string) {
     feedbackError(file, `Cyclical import detected - an infinite import cycle
-     was found on ${namespaceName} when processing import for ${sourceNamespaceName}`, true);
+     was found on ${path} when processing import for ${sourceImportPath}`, true);
   }
 
   /**
@@ -164,8 +164,8 @@ export default class ImportProcessor {
 
     let imports = ``;
     let cwd = process.cwd();
-    file.importedNamespaces.forEach( (namespace) => {
-      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, namespace.file.pkgUri)}`;
+    file.importedFiles.forEach( (file) => {
+      imports += `\n${this.settings.importTemplate.replace(`$PATH$`, file.pkgUri)}`;
     });
 
     //if the codebehind is not imported yet, import it

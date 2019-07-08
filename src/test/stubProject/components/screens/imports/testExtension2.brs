@@ -1,4 +1,4 @@
-'@Import NetMixin
+'@Import "pkg:/source/mixins/NetMixin.brs"
 
 function Init() as void
     m.log.I("Init")

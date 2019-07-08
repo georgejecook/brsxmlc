@@ -1,5 +1,5 @@
 export class ProcessorSettings {
-  public importRegex = new RegExp(`('@Import )(\\w*)`, `gi`);
+  public importRegex = new RegExp(`'@Import\\s*\\"(.*)\\"`, `gi`);
   public namespaceRegex = new RegExp(`('@Namespace) *(\\w*) *(\\w*)`, `i`);
   public importXMLRegex = new RegExp(`<.*?script.*uri=\\"(.*)\\".*\\/?>"`, `gi`);
   public importTemplate = `<script type="text/brightscript" uri="$PATH$" />`;

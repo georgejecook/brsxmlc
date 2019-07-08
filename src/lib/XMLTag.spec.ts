@@ -3,8 +3,6 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { create } from 'domain';
-import { Error } from 'tslint/lib/error';
 import Binding from './Binding';
 import { BindingProcessor } from './BindingProcessor';
 import { BindingType } from './BindingType';

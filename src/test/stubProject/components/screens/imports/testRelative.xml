@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component
-        name="testExtension3"
-        extends="testExtension2"
+        name="testRelative"
+        extends="Group"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="https://devtools.web.roku.com/schema/RokuSceneGraph.xsd"
 >
@@ -12,6 +12,10 @@
                 type="string"
                 alias="text.text"/>
     </interface>
+
+    <script
+            type="text/brightscript"
+            uri="∫test.brs"/>
 
 
     <children>

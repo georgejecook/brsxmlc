@@ -18,7 +18,6 @@ let config = require('../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 let fileMap: ProjectFileMap;
 let importFilesPath: string = path.join('components', 'screens', 'imports');
-let projectPath: string = path.join(path.resolve(config.outputPath), importFilesPath);
 let importProcessor: ImportProcessor;
 
 describe('Include importProcessor', function() {
@@ -57,17 +56,19 @@ describe('Include importProcessor', function() {
     it('identifies 1 import', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(1);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(1);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members([
+        'FocusMixin.brs'
+      ]);
       expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('identifies 2 imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/test2Imports.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(2);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
-        'FocusMixin', 'TextMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(2);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members([
+        'FocusMixin.brs', 'TextMixin.brs']);
       expect(getFeedbackErrors()).to.be.empty;
     });
 
@@ -92,9 +93,9 @@ describe('Include importProcessor', function() {
     it('identifies cascading imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testCascadingImports.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(3);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
-        'Utils', 'LogMixin', 'NetMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(3);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members([
+        'Utils.brs', 'LogMixin.brs', 'NetMixin.brs']);
       expect(getFeedbackErrors()).to.be.empty;
     });
 
@@ -137,17 +138,17 @@ describe('Include importProcessor', function() {
     it('parent class includes imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(1);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(['FocusMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(1);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members(['FocusMixin.brs']);
       expect(getFeedbackErrors()).to.be.empty;
     });
 
     it('include subclass imports', function() {
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension2.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(3);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members([
-        'Utils', 'LogMixin', 'NetMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(3);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members([
+        'Utils.brs', 'LogMixin.brs', 'NetMixin.brs']);
       expect(getFeedbackErrors()).to.be.empty;
     });
 
@@ -160,20 +161,20 @@ describe('Include importProcessor', function() {
       importProcessor.identifyImports(fileParent);
       const file = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension3.xml');
       importProcessor.identifyImports(file);
-      expect(file.requiredNamespaces).to.have.lengthOf(2);
-      expect(file.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(
-        ['TextMixin', 'FocusMixin']);
-      expect(file.importedNamespaces).to.have.lengthOf(1);
-      expect(file.importedNamespaces.map( (ns) => ns.name)).to.have.all.members(
-        ['TextMixin']);
+      expect(file.requiredFiles).to.have.lengthOf(2);
+      expect(file.requiredFiles.map( (file) => file.filename)).to.have.all.members(
+        ['TextMixin.brs', 'FocusMixin.brs']);
+      expect(file.importedFiles).to.have.lengthOf(1);
+      expect(file.importedFiles.map( (file) => file.filename)).to.have.all.members(
+        ['TextMixin.brs']);
 
       const topFile = processor.fileMap.getFileByPkgPath('components/screens/imports/testExtension4.xml');
       importProcessor.identifyImports(topFile);
-      expect(topFile.requiredNamespaces).to.have.lengthOf(6);
-      expect(topFile.requiredNamespaces.map( (ns) => ns.name)).to.have.all.members(
-        ['TextMixin', 'FocusMixin', 'NetMixin', 'LogMixin', 'AuthMixin', 'Utils']);
-      expect(topFile.importedNamespaces.map( (ns) => ns.name)).to.have.all.members(
-        ['AuthMixin']);
+      expect(topFile.requiredFiles).to.have.lengthOf(6);
+      expect(topFile.requiredFiles.map( (file) => file.filename)).to.have.all.members(
+        ['TextMixin.brs', 'FocusMixin.brs', 'NetMixin.brs', 'LogMixin.brs', 'AuthMixin.brs', 'Utils.brs']);
+      expect(topFile.importedFiles.map( (file) => file.filename)).to.have.all.members(
+        ['AuthMixin.brs']);
 
       expect(getFeedbackErrors()).to.be.empty;
     });

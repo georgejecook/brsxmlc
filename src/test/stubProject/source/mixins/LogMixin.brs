@@ -1,5 +1,5 @@
 '@Namespace LM LogMixin
-'@Import Utils
+'@Import "../utils/Utils.brs"
 
 function Init() as void
 end function
