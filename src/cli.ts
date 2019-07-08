@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { ProcessorConfig, ProcessorLogLevel } from './lib/ProcessorConfig';
-import { ProjectProcessor } from './lib/ProjectProcessor';
+import { ProcessorConfig, ProcessorLogLevel } from './lib/fileProcessing/ProcessorConfig';
+import { ProjectProcessor } from './lib/fileProcessing/ProjectProcessor';
 
 const program = require('commander');
 const inspect = require('util').inspect;

@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 
 import File from './File';
-import Namespace from './NameSpace';
+import Namespace from '../namespaceSupport/NameSpace';
 import ProjectFileMap from './ProjectFileMap';
 
-let config = require('../test/testProcessorConfig.json');
+let config = require('../../test/testProcessorConfig.json');
 
 describe('Project File map', function() {
   describe('Initialization', function() {

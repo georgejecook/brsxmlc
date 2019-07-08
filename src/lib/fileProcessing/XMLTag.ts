@@ -1,8 +1,8 @@
-import Binding from './Binding';
-import { BindingType } from './BindingType';
-import { feedbackError, feedbackWarning } from './Feedback';
+import Binding from '../bindingSupport/Binding';
+import { BindingType } from '../bindingSupport/BindingType';
+import { feedbackError, feedbackWarning } from '../utils/Feedback';
 import File from './File';
-import { getRegexMatchValue, pad } from './Utils';
+import { getRegexMatchValue, pad } from '../utils/Utils';
 
 let bindingTypeTextMap = {
   oneway: BindingType.oneWay,

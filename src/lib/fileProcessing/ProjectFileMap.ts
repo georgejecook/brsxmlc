@@ -1,5 +1,5 @@
 import File from './File';
-import Namespace from './NameSpace';
+import Namespace from '../namespaceSupport/NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 
 export default class ProjectFileMap {

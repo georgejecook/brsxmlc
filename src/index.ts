@@ -1,1 +1,1 @@
-export { ProjectProcessor } from './lib/ProjectProcessor';
+export { ProjectProcessor } from './lib/fileProcessing/ProjectProcessor';

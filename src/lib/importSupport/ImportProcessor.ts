@@ -2,15 +2,15 @@
 // @ts-ignore
 import { XmlFile } from 'brightscript-language';
 
-import { feedbackError } from './Feedback';
-import File from './File';
-import { FileFeedback, FileFeedbackType } from './FileFeedback';
-import { FileType } from './FileType';
-import { ProcessorConfig } from './ProcessorConfig';
-import { ProcessorSettings } from './ProcessorSettings';
-import ProjectFileMap from './ProjectFileMap';
-import { ProjectProcessor } from './ProjectProcessor';
-import { addSetItems, spliceString } from './Utils';
+import { feedbackError } from '../utils/Feedback';
+import File from '../fileProcessing/File';
+import { FileFeedback, FileFeedbackType } from '../fileProcessing/FileFeedback';
+import { FileType } from '../fileProcessing/FileType';
+import { ProcessorConfig } from '../fileProcessing/ProcessorConfig';
+import { ProcessorSettings } from '../fileProcessing/ProcessorSettings';
+import ProjectFileMap from '../fileProcessing/ProjectFileMap';
+import { ProjectProcessor } from '../fileProcessing/ProjectProcessor';
+import { addSetItems, spliceString } from '../utils/Utils';
 
 /**
  * Manages importing includes for a given brs file

@@ -4,10 +4,10 @@ import * as _ from 'lodash';
 
 import { expect } from 'chai';
 
-import { getFeedbackErrors, getFeedbackWarnings, resetFeedback } from './Feedback';
+import { getFeedbackErrors, getFeedbackWarnings, resetFeedback } from '../utils/Feedback';
 import File from './File';
 import { FileType } from './FileType';
-import Namespace from './NameSpace';
+import Namespace from '../namespaceSupport/NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';
@@ -16,7 +16,7 @@ const chaiSubset = require('chai-subset');
 let dircompare = require('dir-compare');
 
 chai.use(chaiSubset);
-let config: ProcessorConfig = require('../test/testProcessorConfig.json');
+let config: ProcessorConfig = require('../../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 
 describe('Project Processor', function() {

@@ -6,15 +6,15 @@ import * as path from 'path';
 import Binding from './Binding';
 import { BindingProcessor } from './BindingProcessor';
 import { BindingType } from './BindingType';
-import { getFeedbackErrors, resetFeedback } from './Feedback';
-import File from './File';
-import ProjectFileMap from './ProjectFileMap';
-import { ProjectProcessor } from './ProjectProcessor';
+import { getFeedbackErrors, resetFeedback } from '../utils/Feedback';
+import File from '../fileProcessing/File';
+import ProjectFileMap from '../fileProcessing/ProjectFileMap';
+import { ProjectProcessor } from '../fileProcessing/ProjectProcessor';
 
 const chaiSubset = require('chai-subset');
 chai.use(chaiSubset);
 
-let config = require('../test/testProcessorConfig.json');
+let config = require('../../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 let fileMap: ProjectFileMap;
 let importFilesPath: string = path.join('components', 'screens', 'imports');

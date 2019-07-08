@@ -1,5 +1,5 @@
-import File from './File';
-import { FileFeedback, FileFeedbackType } from './FileFeedback';
+import File from '../fileProcessing/File';
+import { FileFeedback, FileFeedbackType } from '../fileProcessing/FileFeedback';
 
 let _feedback: FileFeedback[] = [];
 

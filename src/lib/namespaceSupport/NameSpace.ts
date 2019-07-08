@@ -1,4 +1,4 @@
-import File from './File';
+import File from '../fileProcessing/File';
 
 export default class Namespace {
   constructor(name: string, file: File, filePrefix?: string) {

@@ -3,18 +3,18 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { getFeedbackErrors } from './Feedback';
-import { resetFeedback } from './Feedback';
-import File from './File';
+import { getFeedbackErrors } from '../utils/Feedback';
+import { resetFeedback } from '../utils/Feedback';
+import File from '../fileProcessing/File';
 import ImportProcessor from './ImportProcessor';
-import ProjectFileMap from './ProjectFileMap';
-import { ProjectProcessor } from './ProjectProcessor';
-import { getRegexMatchesValues } from './Utils';
+import ProjectFileMap from '../fileProcessing/ProjectFileMap';
+import { ProjectProcessor } from '../fileProcessing/ProjectProcessor';
+import { getRegexMatchesValues } from '../utils/Utils';
 
 const chaiSubset = require('chai-subset');
 chai.use(chaiSubset);
 
-let config = require('../test/testProcessorConfig.json');
+let config = require('../../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 let fileMap: ProjectFileMap;
 let importFilesPath: string = path.join('components', 'screens', 'imports');

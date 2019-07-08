@@ -3,9 +3,9 @@ import * as chai from 'chai';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import Binding from './Binding';
-import { BindingProcessor } from './BindingProcessor';
-import { BindingType } from './BindingType';
+import Binding from '../bindingSupport/Binding';
+import { BindingProcessor } from '../bindingSupport/BindingProcessor';
+import { BindingType } from '../bindingSupport/BindingType';
 import File from './File';
 import { FileFeedback } from './FileFeedback';
 import ProjectFileMap from './ProjectFileMap';
@@ -15,7 +15,7 @@ import { XMLTag } from './XMLTag';
 const chaiSubset = require('chai-subset');
 chai.use(chaiSubset);
 
-let config = require('../test/testProcessorConfig.json');
+let config = require('../../test/testProcessorConfig.json');
 let processor: ProjectProcessor;
 let fileMap: ProjectFileMap;
 let importFilesPath: string = path.join('components', 'screens', 'imports');

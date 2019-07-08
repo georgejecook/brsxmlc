@@ -1,13 +1,13 @@
-import { spliceStringAt } from '../../out/lib/StringUtils';
-import File from './File';
-import { FileFeedback } from './FileFeedback';
-import { FileType } from './FileType';
-import { ProcessorConfig } from './ProcessorConfig';
-import { ProcessorSettings } from './ProcessorSettings';
-import ProjectFileMap from './ProjectFileMap';
-import { ProjectProcessor } from './ProjectProcessor';
-import { XMLTag } from './XMLTag';
-const xmldoc = require('./xmldoc');
+import { spliceStringAt } from '../../../out/lib/StringUtils';
+import File from '../fileProcessing/File';
+import { FileFeedback } from '../fileProcessing/FileFeedback';
+import { FileType } from '../fileProcessing/FileType';
+import { ProcessorConfig } from '../fileProcessing/ProcessorConfig';
+import { ProcessorSettings } from '../fileProcessing/ProcessorSettings';
+import ProjectFileMap from '../fileProcessing/ProjectFileMap';
+import { ProjectProcessor } from '../fileProcessing/ProjectProcessor';
+import { XMLTag } from '../fileProcessing/XMLTag';
+const xmldoc = require('../utils/xmldoc');
 
 export class BindingProcessor {
   constructor(projectProcessor: ProjectProcessor) {

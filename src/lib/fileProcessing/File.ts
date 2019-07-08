@@ -6,9 +6,9 @@ import { BrsFile } from 'brightscript-language';
 // @ts-ignore
 import { XmlFile } from 'brightscript-language';
 
-import Binding from './Binding';
+import Binding from '../bindingSupport/Binding';
 import { FileType } from './FileType';
-import Namespace from './NameSpace';
+import Namespace from '../namespaceSupport/NameSpace';
 
 /**
  * describes a file in our project.
