@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+// @ts-ignore
 import { BrsFile } from 'brightscript-language';
+// @ts-ignore
 import { XmlFile } from 'brightscript-language';
 
 import Binding from './Binding';
@@ -21,9 +23,9 @@ export default class File {
     this._pkgUri = `pkg:/${path.join(projectPath, filename)}`;
     this.projectPath = projectPath;
     this.extension = extension;
-    this._importedNamespaceNames = new Set();
-    this.importedNamespaces = [];
-    this.requiredNamespaces = [];
+    this._importedPaths = new Set();
+    this.importedFiles = [];
+    this.requiredFiles = [];
     this.componentIds = new Set<string>();
     this._bindings = [];
     this.associatedFile = null;
@@ -43,11 +45,11 @@ export default class File {
   public associatedFile?: File;
   public parentFile?: File;
   public programFile: XmlFile | BrsFile;
-  public importedNamespaces: Namespace[];
-  public requiredNamespaces: Namespace[];
+  public importedFiles: File[];
+  public requiredFiles: File[];
   public componentIds: Set<string>;
 
-  private readonly _importedNamespaceNames: Set<string>;
+  private readonly _importedPaths: Set<string>;
   private readonly _bindings: Binding[];
   public namespace?: Namespace;
 
@@ -76,8 +78,8 @@ export default class File {
     return this._fsPath;
   }
 
-  public get importedNamespaceNames(): Set<string> {
-    return this._importedNamespaceNames;
+  public get importedPaths(): Set<string> {
+    return this._importedPaths;
   }
   public get fullPath() {
     return this._fullPath;
@@ -118,16 +120,16 @@ export default class File {
     this._fileContents = null;
   }
 
-  public getAllParentNamespaces(nameSpaces: Namespace[] = null): Namespace[] {
-    if (!nameSpaces) {
-      nameSpaces = [];
+  public getAllParentImportPaths(paths: string[] = null): string[] {
+    if (!paths) {
+      paths = [];
     } else {
-      nameSpaces = nameSpaces.concat(this.importedNamespaces);
+      paths = paths.concat(this.importedFiles.map( (file) => file.pkgPath.toLowerCase()));
     }
     if (this.parentFile) {
-      return this.parentFile.getAllParentNamespaces(nameSpaces);
+      return this.parentFile.getAllParentImportPaths(paths);
     } else {
-      return nameSpaces;
+      return paths;
     }
   }
 

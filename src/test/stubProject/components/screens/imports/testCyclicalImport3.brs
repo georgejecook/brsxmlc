@@ -1,5 +1,5 @@
 '@Namespace CyclicalImport3
-'@Import CyclicalImport
+'@Import "testCyclicalImport.brs"
 
 function Init() as void
     m.log.I("Init")

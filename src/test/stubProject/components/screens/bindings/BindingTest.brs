@@ -1,5 +1,5 @@
-'@Import FocusMixin
-'@Import BindingTestVM
+'@Import "pkg:/source/mixins/FocusMixin.brs"
+'@Import "BindingMixin.brs"
 
 function Init() as void
     m.log.I("Init")

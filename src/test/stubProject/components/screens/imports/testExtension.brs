@@ -1,4 +1,4 @@
-'@Import FocusMixin
+'@Import "pkg:/source/mixins/FocusMixin.brs"
 
 function Init() as void
     m.log.I("Init")

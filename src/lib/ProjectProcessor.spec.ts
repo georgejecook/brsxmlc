@@ -242,7 +242,7 @@ describe('Project Processor', function() {
       const ns = processor.getNamespaceFromFile(file);
       expect(ns).to.not.be.null;
       expect(ns.file).to.equal(file);
-      expect(ns.shortName).to.equal('MNS');
+      expect(ns.filePrefix).to.equal('MNS');
       expect(ns.name).to.equal('MyNamespace');
       expect(getFeedbackErrors()).to.be.empty;
     });
@@ -257,7 +257,7 @@ describe('Project Processor', function() {
       const ns = processor.getNamespaceFromFile(file);
       expect(ns).to.not.be.null;
       expect(ns.file).to.equal(file);
-      expect(ns.shortName).to.equal('MyNamespace');
+      expect(ns.filePrefix).to.equal('MyNamespace');
       expect(ns.name).to.equal('MyNamespace');
       expect(getFeedbackErrors()).to.be.empty;
     });
@@ -275,6 +275,31 @@ describe('Project Processor', function() {
       expect(() => processor.getNamespaceFromFile(file)).to.throw(`Error - file.brs(-:-) Could not register namespace MyNamespace,
                 for file file.brs. It is already registered for file file2.brs`);
       expect(getFeedbackErrors()).to.not.be.empty;
+    });
+
+    describe('getPkgPathFromTarget', function() {
+      beforeEach(() => {
+        config = _.clone(config);
+        processor = new ProjectProcessor(config);
+      });
+
+      it('same path', async () => {
+        let sourcePath = 'source/mixins/NetMixin.brs';
+        let relativePath = 'LogMixin.brs';
+        expect(processor.getPkgPathFromTarget(sourcePath, relativePath)).to.eq('source/mixins/LogMixin.brs');
+      });
+
+      it('dot notation', async () => {
+        let sourcePath = 'source/mixins/NetMixin.brs';
+        let relativePath = '../../utils/LogMixin.brs';
+        expect(processor.getPkgPathFromTarget(sourcePath, relativePath)).to.eq('utils/LogMixin.brs');
+      });
+
+      it('absolute path', async () => {
+        let sourcePath = 'source/mixins/NetMixin.brs';
+        let relativePath = 'pkg:/utils/LogMixin.brs';
+        expect(processor.getPkgPathFromTarget(sourcePath, relativePath)).to.eq('utils/LogMixin.brs');
+      });
     });
   });
 });

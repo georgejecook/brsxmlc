@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ProcessorConfig } from './lib/ProcessorConfig';
+import { ProcessorConfig, ProcessorLogLevel } from './lib/ProcessorConfig';
 import { ProjectProcessor } from './lib/ProjectProcessor';
 
 const program = require('commander');
@@ -48,7 +48,8 @@ Please read the docs for usage details https://github.com/georgejecook/brsxmlc/b
         sourcePath: options.sourcepath,
         rootPath: options.rootPath || '',
         filePattern: options.filePattern || ['**/*.brs', '**/*.xml'],
-        outputPath: options.outputPath || ''
+        outputPath: options.outputPath || '',
+        logLevel: ProcessorLogLevel.verbose
       };
     } else {
       console.warn('You must specify either a config file or a test spec directory');
