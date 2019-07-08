@@ -7,4 +7,5 @@ export class ProcessorSettings {
   public bindingRegex = new RegExp(`"{`, `g`);
   public bindingObserverRegex = new RegExp(`"{`, `g`);
   public endOfXmlFileRegex = new RegExp(`</component>`, `gim`);
+  public functionNameRegex = new RegExp('^((?: |\\t)*(?:function|sub)\\s*)([0-9a-z_]*)', 'gim');
 }

@@ -4,10 +4,10 @@ import * as _ from 'lodash';
 
 import { expect } from 'chai';
 
+import Namespace from '../namespaceSupport/NameSpace';
 import { getFeedbackErrors, getFeedbackWarnings, resetFeedback } from '../utils/Feedback';
 import File from './File';
 import { FileType } from './FileType';
-import Namespace from '../namespaceSupport/NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import ProjectFileMap from './ProjectFileMap';
 import { ProjectProcessor } from './ProjectProcessor';

@@ -9,17 +9,17 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inspect } from 'util';
 
+import ImportProcessor from '../importSupport/ImportProcessor';
+import Namespace from '../namespaceSupport/NameSpace';
 import { changeExtension } from '../utils/changeExtension';
 import { feedbackError, feedbackWarning } from '../utils/Feedback';
+import { addSetItems, getRegexMatchesValues } from '../utils/Utils';
 import File from './File';
 import { FileFeedback, FileFeedbackType } from './FileFeedback';
 import { FileType } from './FileType';
-import ImportProcessor from '../importSupport/ImportProcessor';
-import Namespace from '../namespaceSupport/NameSpace';
 import { ProcessorConfig } from './ProcessorConfig';
 import { ProcessorSettings } from './ProcessorSettings';
 import ProjectFileMap from './ProjectFileMap';
-import { addSetItems, getRegexMatchesValues } from '../utils/Utils';
 
 const debug = Debug('projectProcessor');
 

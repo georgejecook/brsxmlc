@@ -34,6 +34,7 @@ export default class File {
     this.hasProcessedImports = false;
   }
 
+  private _isDirty: boolean;
   private _fsPath: string;
   private _pkgPath: string;
   private _pkgUri: string;
@@ -64,6 +65,10 @@ export default class File {
       default:
         return FileType.Other;
     }
+  }
+
+  public get isDirty(): boolean {
+    return this._isDirty;
   }
 
   public get bindings(): Binding[] {
@@ -110,10 +115,12 @@ export default class File {
 
   public setFileContents(fileContents: string) {
     this._fileContents = fileContents;
+    this._isDirty = true;
   }
 
   public saveFileContents() {
     fs.writeFileSync(this.fullPath, this._fileContents, 'utf8');
+    this._isDirty = false;
   }
 
   public unloadContents() {

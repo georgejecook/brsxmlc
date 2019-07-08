@@ -2,8 +2,8 @@ import { expect } from 'chai';
 
 import File from './File';
 
-import { FileType } from './FileType';
 import Namespace from '../namespaceSupport/NameSpace';
+import { FileType } from './FileType';
 
 describe('File File', function() {
   describe('Initialization', function() {
